@@ -2,19 +2,24 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport"
-        content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+  >
+
   <title>상일비전 CAPA 바코드 스캔</title>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
       background: #f4f6f8;
-      color: # #17202a;
+      color: #17202a;
       font-family: Arial, "Noto Sans KR", sans-serif;
     }
 
@@ -29,9 +34,11 @@
       font-size: 24px;
     }
 
-    .sub, .hint {
+    .sub,
+    .hint {
       color: #637083;
       font-size: 14px;
+      line-height: 1.5;
     }
 
     .card {
@@ -39,7 +46,7 @@
       padding: 16px;
       margin-bottom: 14px;
       border-radius: 14px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
     }
 
     label {
@@ -48,7 +55,8 @@
       font-weight: 700;
     }
 
-    select, input {
+    select,
+    input {
       width: 100%;
       min-height: 48px;
       padding: 10px 12px;
@@ -73,12 +81,19 @@
       cursor: pointer;
     }
 
+    button:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
     .action {
       background: #edf1f5;
+      color: #17202a;
     }
 
     .action.selected {
       background: #fee500;
+      color: #111;
       outline: 2px solid #111;
     }
 
@@ -87,6 +102,17 @@
       margin-top: 10px;
       background: #293f8f;
       color: #fff;
+    }
+
+    .photo {
+      width: 100%;
+      margin-top: 9px;
+      background: #596579;
+      color: #fff;
+    }
+
+    .stop {
+      background: #a12626;
     }
 
     .save {
@@ -99,58 +125,54 @@
       display: none !important;
     }
 
-    /* 카메라 영역 */
     #readerWrap {
       position: relative;
       width: 100%;
-      min-height: 280px;
       margin-top: 12px;
       overflow: hidden;
       border-radius: 12px;
       background: #111;
+      min-height: 260px;
     }
 
     #reader {
       width: 100%;
-      min-height: 280px;
-      background: #111;
+      min-height: 260px;
     }
 
     #reader video {
       width: 100% !important;
-      min-height: 280px;
+      min-height: 260px;
       object-fit: cover;
     }
 
-    /* 휴대폰에 항상 보이는 가로형 스캔 사각형 */
     #scanGuide {
       position: absolute;
       z-index: 20;
+      left: 7%;
+      right: 7%;
       top: 50%;
-      left: 50%;
-      width: 88%;
-      height: 115px;
-      transform: translate(-50%, -50%);
+      height: 110px;
+      transform: translateY(-50%);
       border: 4px solid #fee500;
       border-radius: 12px;
       box-shadow:
-        0 0 0 2000px rgba(0, 0, 0, .30),
-        0 0 15px rgba(254, 229, 0, .8);
+        0 0 0 9999px rgba(0, 0, 0, 0.20),
+        0 0 12px rgba(254, 229, 0, 0.9);
       pointer-events: none;
     }
 
-    #scanGuide::before {
-      content: "바코드를 이 사각형 안에 가로로 맞추세요";
+    #scanGuide::after {
+      content: "바코드를 이 사각형 안에 가로로 맞춰 주세요";
       position: absolute;
       left: 50%;
       bottom: -36px;
       transform: translateX(-50%);
       width: 100%;
-      color: #fff;
+      color: #fee500;
       text-align: center;
       font-size: 13px;
       font-weight: 700;
-      text-shadow: 0 1px 3px #000;
     }
 
     #message {
@@ -173,12 +195,16 @@
 <body>
 <main>
   <h1>CAPA 바코드 스캔</h1>
-  <p class="sub">작업자와 작업을 선택한 뒤 제품 바코드를 조준하세요.</p>
+
+  <p class="sub">
+    작업자와 작업을 선택한 뒤 제품 바코드를 조준하세요.
+  </p>
 
   <section class="card">
     <label for="worker">작업자</label>
+
     <select id="worker">
-      <option>불러오는 중...</option>
+      <option value="">불러오는 중...</option>
     </select>
   </section>
 
@@ -189,6 +215,7 @@
 
   <section id="processBox" class="card hidden">
     <label for="process">중단·재시작 공정</label>
+
     <select id="process">
       <option value="">공정 선택</option>
       <option value="포선">포선</option>
@@ -198,24 +225,29 @@
 
   <section id="reasonBox" class="card hidden">
     <label for="reason">중단 사유</label>
+
     <select id="reason">
       <option value="">중단 사유 선택</option>
-      <option>자재 대기</option>
-      <option>사양 확인</option>
-      <option>품질 확인</option>
-      <option>설비·공구 문제</option>
-      <option>타 작업 지원</option>
-      <option>작업자 이석</option>
-      <option>기타</option>
+      <option value="자재 대기">자재 대기</option>
+      <option value="사양 확인">사양 확인</option>
+      <option value="품질 확인">품질 확인</option>
+      <option value="설비·공구 문제">설비·공구 문제</option>
+      <option value="타 작업 지원">타 작업 지원</option>
+      <option value="작업자 이석">작업자 이석</option>
+      <option value="기타">기타</option>
     </select>
   </section>
 
   <section class="card">
     <label for="barcode">제품 바코드</label>
-    <input id="barcode"
-           placeholder="예: Q829Z23S#1"
-           autocomplete="off"
-           autocapitalize="characters">
+
+    <input
+      id="barcode"
+      placeholder="예: Q829Z23S#1"
+      autocomplete="off"
+      autocapitalize="characters"
+      spellcheck="false"
+    >
 
     <div id="readerWrap" class="hidden">
       <div id="reader"></div>
@@ -226,12 +258,27 @@
       카메라로 바코드 스캔
     </button>
 
-    <button id="stopButton" class="scan hidden" type="button">
+    <button id="stopButton" class="scan stop hidden" type="button">
       카메라 닫기
     </button>
 
+    <button id="photoButton" class="photo" type="button">
+      사진 촬영으로 바코드 읽기
+    </button>
+
+    <input
+      id="photoInput"
+      class="hidden"
+      type="file"
+      accept="image/*"
+      capture="environment"
+    >
+
+    <div id="photoReader" class="hidden"></div>
+
     <p class="hint">
-      노란색 사각형 안에 라벨의 상단 바코드를 가로로 맞추세요.
+      노란색 사각형 안에 라벨의 상단 바코드를 가로로 맞춰 주세요.
+      실시간 스캔이 안 되면 사진 촬영 방식을 사용하세요.
     </p>
   </section>
 
@@ -243,206 +290,252 @@
 </main>
 
 <script>
-const API_URL =
-  'https://script.google.com/macros/s/AKfycbzyGn4TJU62xu_BxCyjsfHpba0KML1mqLzpQ3t4j57FUuMMNcYlzk6_t6gyEpexWVdhYg/exec';
+  const API_URL =
+    'https://script.google.com/macros/s/AKfycbzyGn4TJU62xu_BxCyjsfHpba0KML1mqLzpQ3t4j57FUuMMNcYlzk6_t6gyEpexWVdhYg/exec';
 
-const $ = id => document.getElementById(id);
+  const BARCODE_FORMATS = [
+    Html5QrcodeSupportedFormats.CODE_128,
+    Html5QrcodeSupportedFormats.CODE_39,
+    Html5QrcodeSupportedFormats.CODE_93,
+    Html5QrcodeSupportedFormats.CODABAR,
+    Html5QrcodeSupportedFormats.EAN_13,
+    Html5QrcodeSupportedFormats.EAN_8,
+    Html5QrcodeSupportedFormats.ITF,
+    Html5QrcodeSupportedFormats.UPC_A,
+    Html5QrcodeSupportedFormats.UPC_E
+  ];
 
-let selectedAction =
-  new URLSearchParams(location.search).get('action') || '';
+  const $ = id => document.getElementById(id);
 
-let scanner = null;
-let scannerRunning = false;
-let scanCompleted = false;
+  let selectedAction =
+    new URLSearchParams(location.search).get('action') || '';
 
-/* 1차원 바코드 형식을 스캐너 생성 단계에서 지정 */
-const BARCODE_FORMATS = [
-  Html5QrcodeSupportedFormats.CODE_128,
-  Html5QrcodeSupportedFormats.CODE_39,
-  Html5QrcodeSupportedFormats.CODE_93,
-  Html5QrcodeSupportedFormats.CODABAR,
-  Html5QrcodeSupportedFormats.ITF,
-  Html5QrcodeSupportedFormats.EAN_13,
-  Html5QrcodeSupportedFormats.EAN_8,
-  Html5QrcodeSupportedFormats.UPC_A,
-  Html5QrcodeSupportedFormats.UPC_E
-];
+  let scanner = null;
+  let scannerStarting = false;
+  let scannerRunning = false;
+  let scannerStopping = false;
+  let scanCompleted = false;
+  let photoScanner = null;
 
-function jsonp(params) {
-  return new Promise((resolve, reject) => {
-    const cb =
-      'capaCb' + Date.now() + Math.random().toString(36).slice(2);
+  function jsonp(params) {
+    return new Promise((resolve, reject) => {
+      const callbackName =
+        'capaCb' +
+        Date.now() +
+        Math.random().toString(36).slice(2);
 
-    const script = document.createElement('script');
+      const script = document.createElement('script');
 
-    const timer = setTimeout(() => {
-      done(new Error('서버 응답 시간이 초과되었습니다.'));
-    }, 15000);
+      const timer = setTimeout(() => {
+        finish(new Error('서버 응답 시간이 초과되었습니다.'));
+      }, 15000);
 
-    function done(value) {
-      clearTimeout(timer);
-      delete window[cb];
-      script.remove();
+      function finish(result) {
+        clearTimeout(timer);
 
-      if (value instanceof Error) {
-        reject(value);
-      } else {
-        resolve(value);
+        try {
+          delete window[callbackName];
+        } catch (error) {
+          window[callbackName] = undefined;
+        }
+
+        script.remove();
+
+        if (result instanceof Error) {
+          reject(result);
+        } else {
+          resolve(result);
+        }
       }
+
+      window[callbackName] = data => finish(data);
+
+      script.onerror = () => {
+        finish(new Error('Google 시트 서버에 연결하지 못했습니다.'));
+      };
+
+      script.src =
+        API_URL +
+        '?' +
+        new URLSearchParams({
+          ...params,
+          callback: callbackName
+        });
+
+      document.body.appendChild(script);
+    });
+  }
+
+  jsonp({ api: 'initial' })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(response.error);
+      }
+
+      init(response.data);
+    })
+    .catch(showError);
+
+  function init(data) {
+    $('worker').innerHTML =
+      '<option value="">작업자 선택</option>' +
+      data.workers
+        .map(name => {
+          return (
+            '<option value="' +
+            escapeHtml(name) +
+            '">' +
+            escapeHtml(name) +
+            '</option>'
+          );
+        })
+        .join('');
+
+    const savedWorker = localStorage.getItem('capaWorker');
+
+    if (
+      savedWorker &&
+      data.workers.includes(savedWorker)
+    ) {
+      $('worker').value = savedWorker;
     }
 
-    window[cb] = data => done(data);
-
-    script.onerror = () => {
-      done(new Error('Google 시트 서버에 연결하지 못했습니다.'));
-    };
-
-    script.src =
-      API_URL + '?' +
-      new URLSearchParams({
-        ...params,
-        callback: cb
-      });
-
-    document.body.appendChild(script);
-  });
-}
-
-jsonp({ api: 'initial' })
-  .then(data => {
-    if (!data.ok) throw new Error(data.error);
-    init(data.data);
-  })
-  .catch(showError);
-
-function init(data) {
-  $('worker').innerHTML =
-    '<option value="">작업자 선택</option>' +
-    data.workers
-      .map(name =>
-        `<option value="${esc(name)}">${esc(name)}</option>`
-      )
+    $('actions').innerHTML = data.actions
+      .map(action => {
+        return (
+          '<button type="button" class="action" data-action="' +
+          escapeHtml(action) +
+          '">' +
+          escapeHtml(action) +
+          '</button>'
+        );
+      })
       .join('');
 
-  const savedWorker = localStorage.getItem('capaWorker');
+    document
+      .querySelectorAll('.action')
+      .forEach(button => {
+        button.onclick = () => {
+          selectAction(button.dataset.action);
+        };
+      });
 
-  if (savedWorker && data.workers.includes(savedWorker)) {
-    $('worker').value = savedWorker;
+    if (data.actions.includes(selectedAction)) {
+      selectAction(selectedAction);
+    }
   }
 
-  $('actions').innerHTML = data.actions
-    .map(action =>
-      `<button type="button"
-               class="action"
-               data-action="${esc(action)}">${esc(action)}</button>`
-    )
-    .join('');
+  function selectAction(action) {
+    selectedAction = action;
 
-  document.querySelectorAll('.action').forEach(button => {
-    button.onclick = () => selectAction(button.dataset.action);
-  });
+    document
+      .querySelectorAll('.action')
+      .forEach(button => {
+        button.classList.toggle(
+          'selected',
+          button.dataset.action === action
+        );
+      });
 
-  if (data.actions.includes(selectedAction)) {
-    selectAction(selectedAction);
-  }
-}
+    const needsProcess =
+      action === '작업 중단' ||
+      action === '작업 재시작';
 
-function selectAction(action) {
-  selectedAction = action;
-
-  document.querySelectorAll('.action').forEach(button => {
-    button.classList.toggle(
-      'selected',
-      button.dataset.action === action
+    $('processBox').classList.toggle(
+      'hidden',
+      !needsProcess
     );
-  });
 
-  const requiresProcess =
-    action === '작업 중단' || action === '작업 재시작';
+    $('reasonBox').classList.toggle(
+      'hidden',
+      action !== '작업 중단'
+    );
+  }
 
-  $('processBox').classList.toggle('hidden', !requiresProcess);
-  $('reasonBox').classList.toggle(
-    'hidden',
-    action !== '작업 중단'
-  );
-}
+  $('scanButton').onclick = startScanner;
+  $('stopButton').onclick = stopScanner;
 
-$('scanButton').onclick = startScanner;
-$('stopButton').onclick = stopScanner;
-$('saveButton').onclick = save;
-
-async function startScanner() {
-  if (scannerRunning) return;
-
-  scanCompleted = false;
-
-  $('readerWrap').classList.remove('hidden');
-  $('scanButton').classList.add('hidden');
-  $('stopButton').classList.remove('hidden');
-
-  showMessage('카메라를 준비하고 있습니다...', true);
-
-  scanner = new Html5Qrcode('reader', {
-    formatsToSupport: BARCODE_FORMATS,
-    verbose: false
-  });
-
-  const config = {
-    fps: 15,
-
-    /* 휴대폰 화면에 맞춰 인식 영역 자동 계산 */
-    qrbox: function(viewWidth, viewHeight) {
-      const width = Math.floor(Math.min(viewWidth * 0.88, 430));
-      const height = Math.floor(
-        Math.min(Math.max(width * 0.28, 90), 125)
-      );
-
-      return {
-        width: width,
-        height: height
-      };
-    },
-
-    disableFlip: false,
-
-    experimentalFeatures: {
-      useBarCodeDetectorIfSupported: true
+  $('photoButton').onclick = () => {
+    if (scannerStarting || scannerRunning) {
+      stopScanner().finally(() => {
+        $('photoInput').click();
+      });
+    } else {
+      $('photoInput').click();
     }
   };
 
-  try {
-    await scanner.start(
-      {
-        facingMode: {
-          ideal: 'environment'
-        }
-      },
-      config,
-      onScanSuccess,
-      function() {}
+  $('photoInput').onchange = scanPhoto;
+  $('saveButton').onclick = save;
+
+  async function startScanner() {
+    if (
+      scannerStarting ||
+      scannerRunning ||
+      scannerStopping
+    ) {
+      return;
+    }
+
+    scannerStarting = true;
+    scanCompleted = false;
+
+    $('readerWrap').classList.remove('hidden');
+    $('scanButton').classList.add('hidden');
+    $('stopButton').classList.remove('hidden');
+    $('stopButton').disabled = true;
+
+    showMessage(
+      '카메라 권한을 확인하고 있습니다...',
+      true
     );
 
-    scannerRunning = true;
-    showMessage('카메라 실행 완료\n노란색 사각형에 바코드를 맞춰 주세요.', true);
-
-  } catch (firstError) {
-    /* 후면 카메라 지정이 실패하면 카메라 목록으로 다시 시도 */
     try {
       const cameras = await Html5Qrcode.getCameras();
 
       if (!cameras || cameras.length === 0) {
-        throw new Error('사용 가능한 카메라를 찾을 수 없습니다.');
+        throw new Error(
+          '사용 가능한 카메라를 찾을 수 없습니다.'
+        );
       }
 
-      let selectedCamera = cameras[cameras.length - 1];
+      const selectedCamera =
+        cameras.find(camera =>
+          /back|rear|environment|후면|뒷면/i.test(
+            camera.label
+          )
+        ) ||
+        cameras[cameras.length - 1];
 
-      const rearCamera = cameras.find(camera =>
-        /back|rear|environment|후면|뒷면/i.test(camera.label)
-      );
+      scanner = new Html5Qrcode('reader', {
+        formatsToSupport: BARCODE_FORMATS,
+        verbose: false
+      });
 
-      if (rearCamera) {
-        selectedCamera = rearCamera;
-      }
+      const config = {
+        fps: 12,
+
+        qrbox: function(viewWidth, viewHeight) {
+          const width = Math.floor(
+            Math.min(viewWidth * 0.86, 420)
+          );
+
+          const height = Math.floor(
+            Math.min(
+              Math.max(width * 0.27, 90),
+              120
+            )
+          );
+
+          return {
+            width: width,
+            height: height
+          };
+        },
+
+        aspectRatio: 1.777778,
+        disableFlip: false
+      };
 
       await scanner.start(
         selectedCamera.id,
@@ -452,182 +545,296 @@ async function startScanner() {
       );
 
       scannerRunning = true;
-      showMessage('카메라 실행 완료\n노란색 사각형에 바코드를 맞춰 주세요.', true);
+      $('stopButton').disabled = false;
 
-    } catch (secondError) {
-      await resetScanner();
+      showMessage(
+        '카메라 실행 완료\n노란색 사각형 안에 바코드를 맞춰 주세요.',
+        true
+      );
+    } catch (error) {
+      scannerRunning = false;
+
+      try {
+        if (scanner) {
+          scanner.clear();
+        }
+      } catch (clearError) {
+        console.log(clearError);
+      }
+
+      scanner = null;
+      resetCameraButtons();
 
       showError(
         '카메라를 실행할 수 없습니다.\n' +
-        '카카오톡 화면을 외부 브라우저로 열고 카메라 권한을 허용해 주세요.\n\n' +
-        String(secondError)
+        'Chrome 또는 Safari에서 열고 카메라 권한을 허용해 주세요.\n\n' +
+        String(error)
       );
+    } finally {
+      scannerStarting = false;
+      $('stopButton').disabled = false;
     }
   }
-}
 
-function onScanSuccess(decodedText) {
-  if (scanCompleted) return;
+  function onScanSuccess(decodedText) {
+    if (scanCompleted) {
+      return;
+    }
 
-  const value = norm(decodedText);
-  if (!value) return;
+    scanCompleted = true;
 
-  scanCompleted = true;
-  $('barcode').value = value;
+    const barcode = normalizeBarcode(decodedText);
 
-  showMessage('바코드 인식 완료: ' + value, true);
+    $('barcode').value = barcode;
 
-  if (navigator.vibrate) {
-    navigator.vibrate(150);
+    showMessage(
+      '바코드 인식 완료: ' + barcode,
+      true
+    );
+
+    setTimeout(() => {
+      stopScanner();
+    }, 250);
   }
 
-  setTimeout(stopScanner, 250);
-}
+  async function stopScanner() {
+    if (scannerStopping) {
+      return;
+    }
 
-async function stopScanner() {
-  if (!scanner) {
+    scannerStopping = true;
+    $('stopButton').disabled = true;
+
+    const currentScanner = scanner;
+
+    scanner = null;
+    scannerStarting = false;
+
+    try {
+      if (currentScanner && scannerRunning) {
+        await currentScanner.stop();
+      }
+    } catch (error) {
+      console.log('카메라 종료 안내:', error);
+    }
+
+    try {
+      if (currentScanner) {
+        currentScanner.clear();
+      }
+    } catch (error) {
+      console.log('카메라 화면 정리 안내:', error);
+    }
+
+    scannerRunning = false;
+    scannerStopping = false;
+
     resetCameraButtons();
-    return;
   }
 
-  try {
-    if (scannerRunning) {
-      await scanner.stop();
+  function resetCameraButtons() {
+    $('readerWrap').classList.add('hidden');
+    $('scanButton').classList.remove('hidden');
+    $('stopButton').classList.add('hidden');
+    $('stopButton').disabled = false;
+  }
+
+  async function scanPhoto(event) {
+    const file =
+      event.target.files &&
+      event.target.files[0];
+
+    if (!file) {
+      return;
     }
-  } catch (error) {
-    console.log(error);
-  }
 
-  try {
-    scanner.clear();
-  } catch (error) {
-    console.log(error);
-  }
+    $('photoButton').disabled = true;
+    $('photoButton').textContent =
+      '사진 분석 중...';
 
-  scanner = null;
-  scannerRunning = false;
-  resetCameraButtons();
-}
+    showMessage(
+      '촬영한 사진에서 바코드를 찾고 있습니다...',
+      true
+    );
 
-async function resetScanner() {
-  try {
-    if (scanner && scannerRunning) {
-      await scanner.stop();
-    }
-  } catch (error) {}
+    try {
+      if (photoScanner) {
+        try {
+          photoScanner.clear();
+        } catch (error) {
+          console.log(error);
+        }
+      }
 
-  try {
-    if (scanner) scanner.clear();
-  } catch (error) {}
+      photoScanner = new Html5Qrcode(
+        'photoReader',
+        {
+          formatsToSupport: BARCODE_FORMATS,
+          verbose: false
+        }
+      );
 
-  scanner = null;
-  scannerRunning = false;
-  resetCameraButtons();
-}
+      const decodedText =
+        await photoScanner.scanFile(
+          file,
+          true
+        );
 
-function resetCameraButtons() {
-  $('readerWrap').classList.add('hidden');
-  $('scanButton').classList.remove('hidden');
-  $('stopButton').classList.add('hidden');
-}
+      const barcode =
+        normalizeBarcode(decodedText);
 
-function save() {
-  const payload = {
-    api: 'record',
-    workerName: $('worker').value,
-    action: selectedAction,
-    barcode: norm($('barcode').value),
-    process: $('process').value,
-    reason: $('reason').value
-  };
-
-  if (!payload.workerName) {
-    return showError('작업자를 선택해 주세요.');
-  }
-
-  if (!payload.action) {
-    return showError('작업 종류를 선택해 주세요.');
-  }
-
-  if (!payload.barcode) {
-    return showError('바코드를 스캔하거나 입력해 주세요.');
-  }
-
-  if (
-    (payload.action === '작업 중단' ||
-     payload.action === '작업 재시작') &&
-    !payload.process
-  ) {
-    return showError('공정을 선택해 주세요.');
-  }
-
-  if (
-    payload.action === '작업 중단' &&
-    !payload.reason
-  ) {
-    return showError('중단 사유를 선택해 주세요.');
-  }
-
-  localStorage.setItem('capaWorker', payload.workerName);
-
-  $('saveButton').disabled = true;
-  $('saveButton').textContent = '저장 중...';
-
-  jsonp(payload)
-    .then(result => {
-      if (!result.ok) throw new Error(result.error);
-
-      const data = result.data;
+      $('barcode').value = barcode;
 
       showMessage(
-        `${data.message}\n` +
-        `${data.time}\n` +
-        `${data.workerName} / ${data.managementNo}\n` +
-        `${data.barcode}`,
+        '사진 바코드 인식 완료: ' + barcode,
         true
       );
+    } catch (error) {
+      showError(
+        '사진에서 바코드를 인식하지 못했습니다.\n' +
+        '바코드가 흔들리지 않도록 가까이 촬영하거나 번호를 직접 입력해 주세요.\n\n' +
+        String(error)
+      );
+    } finally {
+      try {
+        if (photoScanner) {
+          photoScanner.clear();
+        }
+      } catch (error) {
+        console.log(error);
+      }
 
-      $('barcode').value = '';
-    })
-    .catch(showError)
-    .finally(() => {
-      $('saveButton').disabled = false;
-      $('saveButton').textContent = '작업 기록 저장';
-    });
-}
+      photoScanner = null;
+      $('photoInput').value = '';
+      $('photoButton').disabled = false;
+      $('photoButton').textContent =
+        '사진 촬영으로 바코드 읽기';
+    }
+  }
 
-function norm(value) {
-  return String(value || '')
-    .trim()
-    .replace(/\s+/g, '')
-    .toUpperCase();
-}
+  function save() {
+    const payload = {
+      api: 'record',
+      workerName: $('worker').value,
+      action: selectedAction,
+      barcode: normalizeBarcode(
+        $('barcode').value
+      ),
+      process: $('process').value,
+      reason: $('reason').value
+    };
 
-function showMessage(text, success) {
-  $('message').textContent = text;
-  $('message').className =
-    'card ' + (success ? 'ok' : 'error');
-}
+    if (!payload.workerName) {
+      showError('작업자를 선택해 주세요.');
+      return;
+    }
 
-function showError(error) {
-  showMessage(
-    error && error.message ? error.message : String(error),
-    false
-  );
-}
+    if (!payload.action) {
+      showError('작업 종류를 선택해 주세요.');
+      return;
+    }
 
-function esc(value) {
-  return String(value).replace(
-    /[&<>'"]/g,
-    character => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      "'": '&#39;',
-      '"': '&quot;'
-    }[character])
-  );
-}
+    if (!payload.barcode) {
+      showError(
+        '바코드를 스캔하거나 입력해 주세요.'
+      );
+      return;
+    }
+
+    if (
+      (
+        payload.action === '작업 중단' ||
+        payload.action === '작업 재시작'
+      ) &&
+      !payload.process
+    ) {
+      showError('공정을 선택해 주세요.');
+      return;
+    }
+
+    if (
+      payload.action === '작업 중단' &&
+      !payload.reason
+    ) {
+      showError('중단 사유를 선택해 주세요.');
+      return;
+    }
+
+    localStorage.setItem(
+      'capaWorker',
+      payload.workerName
+    );
+
+    $('saveButton').disabled = true;
+    $('saveButton').textContent = '저장 중...';
+
+    jsonp(payload)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(response.error);
+        }
+
+        const result = response.data;
+
+        showMessage(
+          result.message +
+          '\n' +
+          result.time +
+          '\n' +
+          result.workerName +
+          ' / ' +
+          result.managementNo +
+          '\n' +
+          result.barcode,
+          true
+        );
+
+        $('barcode').value = '';
+      })
+      .catch(showError)
+      .finally(() => {
+        $('saveButton').disabled = false;
+        $('saveButton').textContent =
+          '작업 기록 저장';
+      });
+  }
+
+  function normalizeBarcode(value) {
+    return String(value || '')
+      .trim()
+      .replace(/\s+/g, '')
+      .toUpperCase();
+  }
+
+  function showMessage(text, success) {
+    $('message').textContent = text;
+
+    $('message').className =
+      'card ' +
+      (success ? 'ok' : 'error');
+  }
+
+  function showError(error) {
+    const text =
+      error && error.message
+        ? error.message
+        : String(error);
+
+    showMessage(text, false);
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(
+      /[&<>'"]/g,
+      character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      })[character]
+    );
+  }
 </script>
 </body>
 </html>
