@@ -324,7 +324,10 @@
   $('logoutButton').onclick = logout;
   $('scanButton').onclick = startScanner;
   $('stopButton').onclick = stopScanner;
-  $('photoButton').onclick = () => $('photoInput').click();
+  $('photoButton').onclick = () => {
+  $('photoInput').value = '';
+  $('photoInput').click();
+};
   $('photoInput').onchange = readPhoto;
   $('saveButton').onclick = save;
 
