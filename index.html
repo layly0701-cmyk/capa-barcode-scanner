@@ -82,8 +82,8 @@
     }
 
     button:disabled {
-      opacity: 0.55;
-      cursor: default;
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .action {
@@ -93,7 +93,6 @@
 
     .action.selected {
       background: #fee500;
-      color: #111;
       outline: 2px solid #111;
     }
 
@@ -106,13 +105,9 @@
 
     .photo {
       width: 100%;
-      margin-top: 9px;
-      background: #596579;
+      margin-top: 10px;
+      background: #4b5563;
       color: #fff;
-    }
-
-    .stop {
-      background: #a12626;
     }
 
     .save {
@@ -121,23 +116,32 @@
       color: #fff;
     }
 
-    .hidden {
-      display: none !important;
-    }
-
-    #readerWrap {
-      position: relative;
+    .login-button {
       width: 100%;
       margin-top: 12px;
-      overflow: hidden;
-      border-radius: 12px;
-      background: #111;
-      min-height: 260px;
+      background: #fee500;
+      color: #111;
+    }
+
+    .logout-button {
+      width: 100%;
+      margin-bottom: 14px;
+      background: #e5e7eb;
+      color: #374151;
+      min-height: 42px;
+    }
+
+    .hidden {
+      display: none !important;
     }
 
     #reader {
       width: 100%;
       min-height: 260px;
+      margin-top: 10px;
+      overflow: hidden;
+      border-radius: 10px;
+      background: #111;
     }
 
     #reader video {
@@ -146,36 +150,8 @@
       object-fit: cover;
     }
 
-    #scanGuide {
-      position: absolute;
-      z-index: 20;
-      left: 7%;
-      right: 7%;
-      top: 50%;
-      height: 110px;
-      transform: translateY(-50%);
-      border: 4px solid #fee500;
-      border-radius: 12px;
-      box-shadow:
-        0 0 0 9999px rgba(0, 0, 0, 0.20),
-        0 0 12px rgba(254, 229, 0, 0.9);
-      pointer-events: none;
-    }
-
-    #scanGuide::after {
-      content: "바코드를 이 사각형 안에 가로로 맞춰 주세요";
-      position: absolute;
-      left: 50%;
-      bottom: -36px;
-      transform: translateX(-50%);
-      width: 100%;
-      color: #fee500;
-      text-align: center;
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    #message {
+    #message,
+    #loginMessage {
       white-space: pre-line;
       line-height: 1.55;
     }
@@ -193,12 +169,40 @@
 </head>
 
 <body>
-<main>
+
+<main id="loginView">
+  <h1>CAPA 작업관리</h1>
+  <p class="sub">관리자에게 전달받은 공용 접속 비밀번호를 입력해 주세요.</p>
+
+  <section class="card">
+    <label for="accessPassword">접속 비밀번호</label>
+
+    <input
+      id="accessPassword"
+      type="password"
+      placeholder="비밀번호 입력"
+      autocomplete="current-password"
+    >
+
+    <button id="loginButton" class="login-button" type="button">
+      접속하기
+    </button>
+  </section>
+
+  <section id="loginMessage" class="card hidden"></section>
+</main>
+
+
+<main id="appView" class="hidden">
   <h1>CAPA 바코드 스캔</h1>
 
   <p class="sub">
-    작업자와 작업을 선택한 뒤 제품 바코드를 조준하세요.
+    작업자와 작업을 선택한 뒤 제품 바코드를 스캔하세요.
   </p>
+
+  <button id="logoutButton" class="logout-button" type="button">
+    접속 해제
+  </button>
 
   <section class="card">
     <label for="worker">작업자</label>
@@ -228,13 +232,13 @@
 
     <select id="reason">
       <option value="">중단 사유 선택</option>
-      <option value="자재 대기">자재 대기</option>
-      <option value="사양 확인">사양 확인</option>
-      <option value="품질 확인">품질 확인</option>
-      <option value="설비·공구 문제">설비·공구 문제</option>
-      <option value="타 작업 지원">타 작업 지원</option>
-      <option value="작업자 이석">작업자 이석</option>
-      <option value="기타">기타</option>
+      <option>자재 대기</option>
+      <option>사양 확인</option>
+      <option>품질 확인</option>
+      <option>설비·공구 문제</option>
+      <option>타 작업 지원</option>
+      <option>작업자 이석</option>
+      <option>기타</option>
     </select>
   </section>
 
@@ -246,19 +250,15 @@
       placeholder="예: Q829Z23S#1"
       autocomplete="off"
       autocapitalize="characters"
-      spellcheck="false"
     >
 
-    <div id="readerWrap" class="hidden">
-      <div id="reader"></div>
-      <div id="scanGuide"></div>
-    </div>
+    <div id="reader" class="hidden"></div>
 
     <button id="scanButton" class="scan" type="button">
       카메라로 바코드 스캔
     </button>
 
-    <button id="stopButton" class="scan stop hidden" type="button">
+    <button id="stopButton" class="scan hidden" type="button">
       카메라 닫기
     </button>
 
@@ -274,11 +274,9 @@
       capture="environment"
     >
 
-    <div id="photoReader" class="hidden"></div>
-
     <p class="hint">
-      노란색 사각형 안에 라벨의 상단 바코드를 가로로 맞춰 주세요.
-      실시간 스캔이 안 되면 사진 촬영 방식을 사용하세요.
+      라벨의 상단 바코드를 화면 중앙에 가로로 맞추세요.
+      실시간 스캔이 어려운 휴대전화는 사진 촬영 방식을 사용하세요.
     </p>
   </section>
 
@@ -289,21 +287,13 @@
   <section id="message" class="card hidden"></section>
 </main>
 
+
 <script>
   const API_URL =
     'https://script.google.com/macros/s/AKfycbzyGn4TJU62xu_BxCyjsfHpba0KML1mqLzpQ3t4j57FUuMMNcYlzk6_t6gyEpexWVdhYg/exec';
 
-  const BARCODE_FORMATS = [
-    Html5QrcodeSupportedFormats.CODE_128,
-    Html5QrcodeSupportedFormats.CODE_39,
-    Html5QrcodeSupportedFormats.CODE_93,
-    Html5QrcodeSupportedFormats.CODABAR,
-    Html5QrcodeSupportedFormats.EAN_13,
-    Html5QrcodeSupportedFormats.EAN_8,
-    Html5QrcodeSupportedFormats.ITF,
-    Html5QrcodeSupportedFormats.UPC_A,
-    Html5QrcodeSupportedFormats.UPC_E
-  ];
+  const TOKEN_KEY = 'capaAccessToken';
+  const WORKER_KEY = 'capaWorker';
 
   const $ = id => document.getElementById(id);
 
@@ -311,15 +301,12 @@
     new URLSearchParams(location.search).get('action') || '';
 
   let scanner = null;
-  let scannerStarting = false;
   let scannerRunning = false;
-  let scannerStopping = false;
-  let scanCompleted = false;
-  let photoScanner = null;
+
 
   function jsonp(params) {
     return new Promise((resolve, reject) => {
-      const callbackName =
+      const callback =
         'capaCb' +
         Date.now() +
         Math.random().toString(36).slice(2);
@@ -328,15 +315,15 @@
 
       const timer = setTimeout(() => {
         finish(new Error('서버 응답 시간이 초과되었습니다.'));
-      }, 15000);
+      }, 20000);
 
       function finish(result) {
         clearTimeout(timer);
 
         try {
-          delete window[callbackName];
-        } catch (error) {
-          window[callbackName] = undefined;
+          delete window[callback];
+        } catch (e) {
+          window[callback] = undefined;
         }
 
         script.remove();
@@ -348,10 +335,12 @@
         }
       }
 
-      window[callbackName] = data => finish(data);
+      window[callback] = data => finish(data);
 
       script.onerror = () => {
-        finish(new Error('Google 시트 서버에 연결하지 못했습니다.'));
+        finish(
+          new Error('Google 시트 서버에 연결하지 못했습니다.')
+        );
       };
 
       script.src =
@@ -359,71 +348,181 @@
         '?' +
         new URLSearchParams({
           ...params,
-          callback: callbackName
+          callback: callback
         });
 
       document.body.appendChild(script);
     });
   }
 
-  jsonp({ api: 'initial' })
-    .then(response => {
+
+  function getToken() {
+    return localStorage.getItem(TOKEN_KEY) || '';
+  }
+
+
+  function setToken(token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+
+
+  function clearToken() {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+
+
+  function showLogin() {
+    $('appView').classList.add('hidden');
+    $('loginView').classList.remove('hidden');
+    $('accessPassword').focus();
+  }
+
+
+  function showApp() {
+    $('loginView').classList.add('hidden');
+    $('appView').classList.remove('hidden');
+  }
+
+
+  function isLoginRequired(error) {
+    const text =
+      error && error.message
+        ? error.message
+        : String(error || '');
+
+    return text.indexOf('LOGIN_REQUIRED') !== -1;
+  }
+
+
+  async function login() {
+    const password = $('accessPassword').value;
+
+    if (!password) {
+      return showLoginError('접속 비밀번호를 입력해 주세요.');
+    }
+
+    $('loginButton').disabled = true;
+    $('loginButton').textContent = '확인 중...';
+
+    try {
+      const response = await jsonp({
+        api: 'login',
+        password: password
+      });
+
+      if (!response.ok) {
+        throw new Error(response.error);
+      }
+
+      if (
+        !response.data ||
+        !response.data.token
+      ) {
+        throw new Error('인증 토큰을 받지 못했습니다.');
+      }
+
+      setToken(response.data.token);
+      $('accessPassword').value = '';
+
+      await loadInitialData();
+
+    } catch (error) {
+      clearToken();
+      showLoginError(error);
+
+    } finally {
+      $('loginButton').disabled = false;
+      $('loginButton').textContent = '접속하기';
+    }
+  }
+
+
+  async function loadInitialData() {
+    const token = getToken();
+
+    if (!token) {
+      showLogin();
+      return;
+    }
+
+    try {
+      const response = await jsonp({
+        api: 'initial',
+        token: token
+      });
+
       if (!response.ok) {
         throw new Error(response.error);
       }
 
       init(response.data);
-    })
-    .catch(showError);
+      showApp();
+
+    } catch (error) {
+      if (isLoginRequired(error)) {
+        clearToken();
+        showLogin();
+        showLoginError(
+          '접속 인증이 필요합니다. 비밀번호를 다시 입력해 주세요.'
+        );
+      } else {
+        showLogin();
+        showLoginError(error);
+      }
+    }
+  }
+
 
   function init(data) {
+    const workers = Array.isArray(data.workers)
+      ? data.workers
+      : [];
+
+    const actions = Array.isArray(data.actions)
+      ? data.actions
+      : [];
+
     $('worker').innerHTML =
       '<option value="">작업자 선택</option>' +
-      data.workers
-        .map(name => {
-          return (
-            '<option value="' +
-            escapeHtml(name) +
-            '">' +
-            escapeHtml(name) +
-            '</option>'
-          );
-        })
+      workers
+        .map(name =>
+          `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
+        )
         .join('');
 
-    const savedWorker = localStorage.getItem('capaWorker');
+    const savedWorker =
+      localStorage.getItem(WORKER_KEY);
 
     if (
       savedWorker &&
-      data.workers.includes(savedWorker)
+      workers.includes(savedWorker)
     ) {
       $('worker').value = savedWorker;
     }
 
-    $('actions').innerHTML = data.actions
-      .map(action => {
-        return (
-          '<button type="button" class="action" data-action="' +
-          escapeHtml(action) +
-          '">' +
-          escapeHtml(action) +
-          '</button>'
-        );
-      })
-      .join('');
+    $('actions').innerHTML =
+      actions
+        .map(action =>
+          `<button
+            type="button"
+            class="action"
+            data-action="${escapeHtml(action)}"
+          >${escapeHtml(action)}</button>`
+        )
+        .join('');
 
     document
       .querySelectorAll('.action')
       .forEach(button => {
-        button.onclick = () => {
+        button.onclick = () =>
           selectAction(button.dataset.action);
-        };
       });
 
-    if (data.actions.includes(selectedAction)) {
+    if (actions.includes(selectedAction)) {
       selectAction(selectedAction);
     }
   }
+
 
   function selectAction(action) {
     selectedAction = action;
@@ -452,269 +551,145 @@
     );
   }
 
-  $('scanButton').onclick = startScanner;
-  $('stopButton').onclick = stopScanner;
-
-  $('photoButton').onclick = () => {
-    if (scannerStarting || scannerRunning) {
-      stopScanner().finally(() => {
-        $('photoInput').click();
-      });
-    } else {
-      $('photoInput').click();
-    }
-  };
-
-  $('photoInput').onchange = scanPhoto;
-  $('saveButton').onclick = save;
 
   async function startScanner() {
-    if (
-      scannerStarting ||
-      scannerRunning ||
-      scannerStopping
-    ) {
+    if (scannerRunning) {
       return;
     }
 
-    scannerStarting = true;
-    scanCompleted = false;
-
-    $('readerWrap').classList.remove('hidden');
-    $('scanButton').classList.add('hidden');
-    $('stopButton').classList.remove('hidden');
-    $('stopButton').disabled = true;
-
-    showMessage(
-      '카메라 권한을 확인하고 있습니다...',
-      true
-    );
-
     try {
-      const cameras = await Html5Qrcode.getCameras();
+      $('reader').classList.remove('hidden');
+      $('scanButton').classList.add('hidden');
+      $('stopButton').classList.remove('hidden');
 
-      if (!cameras || cameras.length === 0) {
-        throw new Error(
-          '사용 가능한 카메라를 찾을 수 없습니다.'
-        );
-      }
-
-      const selectedCamera =
-        cameras.find(camera =>
-          /back|rear|environment|후면|뒷면/i.test(
-            camera.label
-          )
-        ) ||
-        cameras[cameras.length - 1];
-
-      scanner = new Html5Qrcode('reader', {
-        formatsToSupport: BARCODE_FORMATS,
-        verbose: false
-      });
-
-      const config = {
-        fps: 12,
-
-        qrbox: function(viewWidth, viewHeight) {
-          const width = Math.floor(
-            Math.min(viewWidth * 0.86, 420)
-          );
-
-          const height = Math.floor(
-            Math.min(
-              Math.max(width * 0.27, 90),
-              120
-            )
-          );
-
-          return {
-            width: width,
-            height: height
-          };
-        },
-
-        aspectRatio: 1.777778,
-        disableFlip: false
-      };
-
-      await scanner.start(
-        selectedCamera.id,
-        config,
-        onScanSuccess,
-        function() {}
-      );
+      scanner =
+        new Html5Qrcode('reader');
 
       scannerRunning = true;
-      $('stopButton').disabled = false;
 
-      showMessage(
-        '카메라 실행 완료\n노란색 사각형 안에 바코드를 맞춰 주세요.',
-        true
+      const width = Math.min(
+        Math.max(window.innerWidth - 80, 220),
+        340
       );
+
+      await scanner.start(
+        {
+          facingMode: {
+            ideal: 'environment'
+          }
+        },
+        {
+          fps: 10,
+          qrbox: {
+            width: width,
+            height: 120
+          },
+          aspectRatio: 1.777778,
+          disableFlip: true
+        },
+        decodedText => {
+          $('barcode').value =
+            normalizeBarcode(decodedText);
+
+          showMessage(
+            '바코드 인식 완료: ' +
+            $('barcode').value,
+            true
+          );
+
+          stopScanner();
+        },
+        () => {}
+      );
+
     } catch (error) {
-      scannerRunning = false;
-
-      try {
-        if (scanner) {
-          scanner.clear();
-        }
-      } catch (clearError) {
-        console.log(clearError);
-      }
-
-      scanner = null;
-      resetCameraButtons();
+      await stopScanner();
 
       showError(
         '카메라를 실행할 수 없습니다.\n' +
-        'Chrome 또는 Safari에서 열고 카메라 권한을 허용해 주세요.\n\n' +
+        '카카오톡 화면이 아닌 외부 브라우저로 열고 카메라 권한을 허용해 주세요.\n' +
         String(error)
       );
-    } finally {
-      scannerStarting = false;
-      $('stopButton').disabled = false;
     }
   }
 
-  function onScanSuccess(decodedText) {
-    if (scanCompleted) {
-      return;
-    }
-
-    scanCompleted = true;
-
-    const barcode = normalizeBarcode(decodedText);
-
-    $('barcode').value = barcode;
-
-    showMessage(
-      '바코드 인식 완료: ' + barcode,
-      true
-    );
-
-    setTimeout(() => {
-      stopScanner();
-    }, 250);
-  }
 
   async function stopScanner() {
-    if (scannerStopping) {
-      return;
-    }
-
-    scannerStopping = true;
-    $('stopButton').disabled = true;
-
     const currentScanner = scanner;
 
     scanner = null;
-    scannerStarting = false;
 
-    try {
-      if (currentScanner && scannerRunning) {
-        await currentScanner.stop();
+    if (currentScanner) {
+      try {
+        if (scannerRunning) {
+          await currentScanner.stop();
+        }
+      } catch (e) {
+        // 이미 중지된 경우 무시
       }
-    } catch (error) {
-      console.log('카메라 종료 안내:', error);
-    }
 
-    try {
-      if (currentScanner) {
+      try {
         currentScanner.clear();
+      } catch (e) {
+        // 화면 정리 실패는 무시
       }
-    } catch (error) {
-      console.log('카메라 화면 정리 안내:', error);
     }
 
     scannerRunning = false;
-    scannerStopping = false;
 
-    resetCameraButtons();
-  }
-
-  function resetCameraButtons() {
-    $('readerWrap').classList.add('hidden');
+    $('reader').classList.add('hidden');
     $('scanButton').classList.remove('hidden');
     $('stopButton').classList.add('hidden');
-    $('stopButton').disabled = false;
   }
 
-  async function scanPhoto(event) {
-    const file =
-      event.target.files &&
-      event.target.files[0];
 
+  async function readPhoto(file) {
     if (!file) {
       return;
     }
 
-    $('photoButton').disabled = true;
-    $('photoButton').textContent =
-      '사진 분석 중...';
+    const photoScanner =
+      new Html5Qrcode('reader');
 
-    showMessage(
-      '촬영한 사진에서 바코드를 찾고 있습니다...',
-      true
-    );
+    $('reader').classList.remove('hidden');
 
     try {
-      if (photoScanner) {
-        try {
-          photoScanner.clear();
-        } catch (error) {
-          console.log(error);
-        }
-      }
-
-      photoScanner = new Html5Qrcode(
-        'photoReader',
-        {
-          formatsToSupport: BARCODE_FORMATS,
-          verbose: false
-        }
-      );
-
       const decodedText =
         await photoScanner.scanFile(
           file,
           true
         );
 
-      const barcode =
+      $('barcode').value =
         normalizeBarcode(decodedText);
 
-      $('barcode').value = barcode;
-
       showMessage(
-        '사진 바코드 인식 완료: ' + barcode,
+        '바코드 인식 완료: ' +
+        $('barcode').value,
         true
       );
+
     } catch (error) {
       showError(
         '사진에서 바코드를 인식하지 못했습니다.\n' +
-        '바코드가 흔들리지 않도록 가까이 촬영하거나 번호를 직접 입력해 주세요.\n\n' +
-        String(error)
+        '상단 바코드만 크게 보이도록 다시 촬영해 주세요.'
       );
+
     } finally {
       try {
-        if (photoScanner) {
-          photoScanner.clear();
-        }
-      } catch (error) {
-        console.log(error);
-      }
+        photoScanner.clear();
+      } catch (e) {}
 
-      photoScanner = null;
+      $('reader').classList.add('hidden');
       $('photoInput').value = '';
-      $('photoButton').disabled = false;
-      $('photoButton').textContent =
-        '사진 촬영으로 바코드 읽기';
     }
   }
 
-  function save() {
+
+  async function saveWork() {
     const payload = {
       api: 'record',
+      token: getToken(),
       workerName: $('worker').value,
       action: selectedAction,
       barcode: normalizeBarcode(
@@ -725,20 +700,21 @@
     };
 
     if (!payload.workerName) {
-      showError('작업자를 선택해 주세요.');
-      return;
+      return showError(
+        '작업자를 선택해 주세요.'
+      );
     }
 
     if (!payload.action) {
-      showError('작업 종류를 선택해 주세요.');
-      return;
+      return showError(
+        '작업 종류를 선택해 주세요.'
+      );
     }
 
     if (!payload.barcode) {
-      showError(
+      return showError(
         '바코드를 스캔하거나 입력해 주세요.'
       );
-      return;
     }
 
     if (
@@ -748,56 +724,66 @@
       ) &&
       !payload.process
     ) {
-      showError('공정을 선택해 주세요.');
-      return;
+      return showError(
+        '중단 또는 재시작할 공정을 선택해 주세요.'
+      );
     }
 
     if (
       payload.action === '작업 중단' &&
       !payload.reason
     ) {
-      showError('중단 사유를 선택해 주세요.');
-      return;
+      return showError(
+        '중단 사유를 선택해 주세요.'
+      );
     }
 
     localStorage.setItem(
-      'capaWorker',
+      WORKER_KEY,
       payload.workerName
     );
 
     $('saveButton').disabled = true;
     $('saveButton').textContent = '저장 중...';
 
-    jsonp(payload)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(response.error);
-        }
+    try {
+      const response =
+        await jsonp(payload);
 
-        const result = response.data;
+      if (!response.ok) {
+        throw new Error(response.error);
+      }
 
-        showMessage(
-          result.message +
-          '\n' +
-          result.time +
-          '\n' +
-          result.workerName +
-          ' / ' +
-          result.managementNo +
-          '\n' +
-          result.barcode,
-          true
+      const result = response.data;
+
+      showMessage(
+        `${result.message}
+${result.time}
+${result.workerName} / ${result.managementNo}
+${result.barcode}`,
+        true
+      );
+
+      $('barcode').value = '';
+
+    } catch (error) {
+      if (isLoginRequired(error)) {
+        clearToken();
+        showLogin();
+        showLoginError(
+          '접속 인증이 만료되었습니다. 비밀번호를 다시 입력해 주세요.'
         );
+      } else {
+        showError(error);
+      }
 
-        $('barcode').value = '';
-      })
-      .catch(showError)
-      .finally(() => {
-        $('saveButton').disabled = false;
-        $('saveButton').textContent =
-          '작업 기록 저장';
-      });
+    } finally {
+      $('saveButton').disabled = false;
+      $('saveButton').textContent =
+        '작업 기록 저장';
+    }
   }
+
 
   function normalizeBarcode(value) {
     return String(value || '')
@@ -806,13 +792,13 @@
       .toUpperCase();
   }
 
-  function showMessage(text, success) {
-    $('message').textContent = text;
 
+  function showMessage(text, ok) {
+    $('message').textContent = text;
     $('message').className =
-      'card ' +
-      (success ? 'ok' : 'error');
+      'card ' + (ok ? 'ok' : 'error');
   }
+
 
   function showError(error) {
     const text =
@@ -822,6 +808,19 @@
 
     showMessage(text, false);
   }
+
+
+  function showLoginError(error) {
+    const text =
+      error && error.message
+        ? error.message
+        : String(error);
+
+    $('loginMessage').textContent = text;
+    $('loginMessage').className =
+      'card error';
+  }
+
 
   function escapeHtml(value) {
     return String(value).replace(
@@ -835,6 +834,47 @@
       })[character]
     );
   }
+
+
+  $('loginButton').onclick = login;
+
+  $('accessPassword')
+    .addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        login();
+      }
+    });
+
+  $('logoutButton').onclick = async () => {
+    await stopScanner();
+    clearToken();
+    showLogin();
+  };
+
+  $('scanButton').onclick = startScanner;
+  $('stopButton').onclick = stopScanner;
+  $('saveButton').onclick = saveWork;
+
+  $('photoButton').onclick = () => {
+    $('photoInput').click();
+  };
+
+  $('photoInput').onchange = event => {
+    readPhoto(
+      event.target.files &&
+      event.target.files[0]
+    );
+  };
+
+  window.addEventListener(
+    'pagehide',
+    () => {
+      stopScanner();
+    }
+  );
+
+  loadInitialData();
 </script>
+
 </body>
 </html>
