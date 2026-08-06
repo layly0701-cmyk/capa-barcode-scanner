@@ -98,10 +98,17 @@
       outline: 2px solid #111;
     }
 
-    .photo {
+    .scan {
       width: 100%;
       margin-top: 10px;
       background: #293f8f;
+      color: #fff;
+    }
+
+    .photo {
+      width: 100%;
+      margin-top: 10px;
+      background: #5d6b80;
       color: #fff;
     }
 
@@ -129,6 +136,21 @@
 
     .hidden {
       display: none !important;
+    }
+
+    #reader {
+      width: 100%;
+      min-height: 250px;
+      margin-top: 10px;
+      overflow: hidden;
+      border: 3px solid #fee500;
+      border-radius: 10px;
+      background: #111;
+    }
+
+    #reader video {
+      width: 100% !important;
+      object-fit: cover;
     }
 
     #fileReader {
@@ -196,7 +218,7 @@
     </button>
 
     <h1>CAPA 바코드 스캔</h1>
-    <p class="sub">작업자와 작업을 선택한 뒤 제품 바코드를 촬영하세요.</p>
+    <p class="sub">작업자와 작업을 선택한 뒤 제품 바코드를 조준하세요.</p>
 
     <section class="card">
       <label for="worker">작업자</label>
@@ -245,7 +267,16 @@
         autocapitalize="characters"
       >
 
+      <div id="reader" class="hidden"></div>
       <div id="fileReader"></div>
+
+      <button id="scanButton" class="scan" type="button">
+        카메라로 바코드 스캔
+      </button>
+
+      <button id="stopButton" class="scan hidden" type="button">
+        카메라 닫기
+      </button>
 
       <button id="photoButton" class="photo" type="button">
         사진 촬영으로 바코드 읽기
@@ -260,8 +291,8 @@
       >
 
       <p class="hint">
-        라벨의 상단 바코드를 화면 중앙에 가로로 크게 촬영해 주세요.
-        촬영 사진은 중앙 영역을 2배 확대하여 먼저 판독합니다.
+        라벨의 상단 바코드를 화면 중앙에 가로로 맞춰 주세요.
+        실시간 스캔이 안 되면 사진 촬영 방식을 사용하세요.
       </p>
     </section>
 
@@ -270,7 +301,6 @@
     </button>
 
     <section id="message" class="card hidden"></section>
-
   </section>
 </main>
 
@@ -286,8 +316,14 @@
   let selectedAction =
     new URLSearchParams(location.search).get('action') || '';
 
+  let scanner = null;
+  let scannerRunning = false;
+  let scannerChanging = false;
+
   $('loginButton').onclick = login;
   $('logoutButton').onclick = logout;
+  $('scanButton').onclick = startScanner;
+  $('stopButton').onclick = stopScanner;
   $('photoButton').onclick = () => {
   $('photoInput').value = '';
   $('photoInput').click();
@@ -382,6 +418,7 @@
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(WORKER_KEY);
 
+    stopScanner();
     showLogin('이 휴대전화의 인증정보를 초기화했습니다.');
   }
 
@@ -390,7 +427,9 @@
       '<option value="">불러오는 중...</option>';
 
     try {
-      const data = await callApi({ api: 'initial' });
+      const data = await callApi({
+        api: 'initial'
+      });
 
       initializeApp(data);
     } catch (error) {
@@ -453,6 +492,119 @@
     );
   }
 
+  async function startScanner() {
+    if (scannerChanging || scannerRunning) {
+      return;
+    }
+
+    scannerChanging = true;
+    $('scanButton').disabled = true;
+
+    try {
+      $('reader').classList.remove('hidden');
+      $('scanButton').classList.add('hidden');
+      $('stopButton').classList.remove('hidden');
+
+      scanner = new Html5Qrcode('reader');
+
+      const config = {
+        fps: 10,
+
+        qrbox: function(viewWidth, viewHeight) {
+          return {
+            width: Math.floor(Math.min(viewWidth * 0.88, 360)),
+            height: Math.floor(Math.min(viewHeight * 0.30, 130))
+          };
+        },
+
+        aspectRatio: 1.7778,
+
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.CODE_93
+        ]
+      };
+
+const cameras = await Html5Qrcode.getCameras();
+
+if (!cameras || cameras.length === 0) {
+  throw new Error('사용 가능한 카메라를 찾을 수 없습니다.');
+}
+
+const rearCamera =
+  cameras.find(camera =>
+    /back|rear|environment|후면/i.test(camera.label || '')
+  ) || cameras[cameras.length - 1];
+
+await scanner.start(
+  rearCamera.id,
+  config,
+  async decodedText => {
+    $('barcode').value = normalizeBarcode(decodedText);
+
+    showMessage(
+      '바코드 인식 완료: ' + $('barcode').value,
+      true
+    );
+
+    await stopScanner();
+  },
+  () => {}
+);
+
+      scannerRunning = true;
+    } catch (error) {
+      await resetScanner();
+
+      showError(
+        '카메라를 실행할 수 없습니다.\n' +
+        '브라우저 카메라 권한을 확인하거나 사진 촬영 방식을 사용해 주세요.\n' +
+        String(error)
+      );
+    } finally {
+      scannerChanging = false;
+      $('scanButton').disabled = false;
+    }
+  }
+
+  async function stopScanner() {
+    if (scannerChanging) {
+      return;
+    }
+
+    scannerChanging = true;
+
+    try {
+      if (scanner && scannerRunning) {
+        await scanner.stop();
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      await resetScanner();
+      scannerChanging = false;
+    }
+  }
+
+  async function resetScanner() {
+    scannerRunning = false;
+
+    if (scanner) {
+      try {
+        scanner.clear();
+      } catch (error) {
+        console.log(error);
+      }
+
+      scanner = null;
+    }
+
+    $('reader').classList.add('hidden');
+    $('scanButton').classList.remove('hidden');
+    $('stopButton').classList.add('hidden');
+  }
+
   async function readPhoto(event) {
     const file =
       event.target.files &&
@@ -472,22 +624,15 @@
     try {
       fileScanner = new Html5Qrcode('fileReader');
 
-      let decodedText = '';
-
-      // 파일 촬영 방식은 카메라 광학 줌을 강제할 수 없으므로,
-      // 중앙 50% 영역을 2배 확대한 사진으로 먼저 판독합니다.
-      try {
-        const zoomedFile = await createZoomedPhoto(file, 2);
-        decodedText = await fileScanner.scanFile(zoomedFile, true);
-      } catch (zoomError) {
-        fileScanner.clear();
-        fileScanner = new Html5Qrcode('fileReader');
-        decodedText = await fileScanner.scanFile(file, true);
-      }
+      const decodedText = await fileScanner.scanFile(file, true);
 
       $('barcode').value = normalizeBarcode(decodedText);
 
-      await showBarcodeStatus($('barcode').value);
+      showMessage(
+        '사진 바코드 인식 완료: ' + $('barcode').value +
+        '\n저장 전에 실제 라벨 번호와 일치하는지 확인해 주세요.',
+        true
+      );
     } catch (error) {
       showError(
         '사진에서 바코드를 인식하지 못했습니다.\n' +
@@ -505,52 +650,6 @@
       $('photoInput').value = '';
       $('photoButton').disabled = false;
       $('photoButton').textContent = '사진 촬영으로 바코드 읽기';
-    }
-  }
-
-  async function createZoomedPhoto(file, zoom) {
-    const bitmap = await createImageBitmap(file);
-    const cropWidth = Math.max(1, Math.floor(bitmap.width / zoom));
-    const cropHeight = Math.max(1, Math.floor(bitmap.height / zoom));
-    const sx = Math.floor((bitmap.width - cropWidth) / 2);
-    const sy = Math.floor((bitmap.height - cropHeight) / 2);
-    const canvas = document.createElement('canvas');
-
-    canvas.width = Math.min(bitmap.width, 2400);
-    canvas.height = Math.round(canvas.width * cropHeight / cropWidth);
-    canvas.getContext('2d').drawImage(
-      bitmap,
-      sx, sy, cropWidth, cropHeight,
-      0, 0, canvas.width, canvas.height
-    );
-    bitmap.close();
-
-    const blob = await new Promise((resolve, reject) => {
-      canvas.toBlob(
-        value => value ? resolve(value) : reject(new Error('사진 확대 실패')),
-        'image/jpeg',
-        0.92
-      );
-    });
-
-    return new File([blob], 'capa-zoom-2x.jpg', { type: 'image/jpeg' });
-  }
-
-  async function showBarcodeStatus(barcode) {
-    try {
-      const result = await callApi({
-        api: 'status',
-        barcode: barcode
-      });
-
-      showMessage(
-        '사진 바코드 인식 완료: ' + result.barcode + '\n' +
-        result.managementNo + ' / ' + result.itemName + '\n' +
-        result.message,
-        result.status !== '완료'
-      );
-    } catch (error) {
-      handleApiError(error);
     }
   }
 
@@ -769,3 +868,4 @@
 </script>
 </body>
 </html>
+
