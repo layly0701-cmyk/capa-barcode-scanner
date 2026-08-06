@@ -101,7 +101,7 @@
     .photo {
       width: 100%;
       margin-top: 10px;
-      background: #5d6b80;
+      background: #293f8f;
       color: #fff;
     }
 
@@ -134,6 +134,19 @@
     #fileReader {
       display: none;
     }
+
+    .active-title { margin: 0 0 10px; font-size: 17px; }
+    .active-list { display: grid; gap: 8px; }
+    .active-item {
+      padding: 11px 12px;
+      border: 1px solid #dde4ec;
+      border-radius: 10px;
+      background: #f8fafc;
+    }
+    .active-main { font-size: 14px; font-weight: 800; }
+    .active-sub { margin-top: 4px; color: #637083; font-size: 12px; }
+    .active-status { float: right; color: #176b3a; }
+    .empty { color: #637083; font-size: 14px; }
 
     #message {
       white-space: pre-line;
@@ -196,7 +209,7 @@
     </button>
 
     <h1>CAPA 바코드 스캔</h1>
-    <p class="sub">작업자와 작업을 선택한 뒤 제품 바코드를 조준하세요.</p>
+    <p class="sub">작업자와 작업을 선택한 뒤 제품 바코드를 촬영하세요.</p>
 
     <section class="card">
       <label for="worker">작업자</label>
@@ -261,6 +274,7 @@
 
       <p class="hint">
         라벨의 상단 바코드를 화면 중앙에 가로로 크게 촬영해 주세요.
+        촬영 사진은 중앙 영역을 2배 확대하여 먼저 판독합니다.
       </p>
     </section>
 
@@ -269,6 +283,13 @@
     </button>
 
     <section id="message" class="card hidden"></section>
+
+    <section class="card">
+      <h2 id="activeTitle" class="active-title">내 진행 중 작업 (최대 5개)</h2>
+      <div id="activeList" class="active-list">
+        <div class="empty">불러오는 중...</div>
+      </div>
+    </section>
   </section>
 </main>
 
@@ -292,6 +313,7 @@
 };
   $('photoInput').onchange = readPhoto;
   $('saveButton').onclick = save;
+  $('worker').onchange = workerChanged;
 
   $('accessPassword').addEventListener('keydown', event => {
     if (event.key === 'Enter') {
@@ -389,7 +411,8 @@
 
     try {
       const data = await callApi({
-        api: 'initial'
+        api: 'initial',
+        workerName: localStorage.getItem(WORKER_KEY) || ''
       });
 
       initializeApp(data);
@@ -411,6 +434,11 @@
 
     if (savedWorker && data.workers.includes(savedWorker)) {
       $('worker').value = savedWorker;
+      setActiveTitle(savedWorker);
+      renderActiveWorks(data.activeWorks || []);
+    } else {
+      setActiveTitle('');
+      renderActiveWorks([]);
     }
 
     $('actions').innerHTML = data.actions
@@ -430,6 +458,37 @@
     if (data.actions.includes(selectedAction)) {
       selectAction(selectedAction);
     }
+  }
+
+  async function workerChanged() {
+    const workerName = $('worker').value;
+
+    if (!workerName) {
+      localStorage.removeItem(WORKER_KEY);
+      setActiveTitle('');
+      renderActiveWorks([]);
+      return;
+    }
+
+    localStorage.setItem(WORKER_KEY, workerName);
+    setActiveTitle(workerName);
+    $('activeList').innerHTML = '<div class="empty">불러오는 중...</div>';
+
+    try {
+      const result = await callApi({
+        api: 'active',
+        workerName: workerName
+      });
+      renderActiveWorks(result.activeWorks || []);
+    } catch (error) {
+      handleApiError(error);
+    }
+  }
+
+  function setActiveTitle(workerName) {
+    $('activeTitle').textContent = workerName
+      ? workerName + ' 님의 진행 중 작업 (최대 5개)'
+      : '내 진행 중 작업 (최대 5개)';
   }
 
   function selectAction(action) {
@@ -472,15 +531,22 @@
     try {
       fileScanner = new Html5Qrcode('fileReader');
 
-      const decodedText = await fileScanner.scanFile(file, true);
+      let decodedText = '';
+
+      // 파일 촬영 방식은 카메라 광학 줌을 강제할 수 없으므로,
+      // 중앙 50% 영역을 2배 확대한 사진으로 먼저 판독합니다.
+      try {
+        const zoomedFile = await createZoomedPhoto(file, 2);
+        decodedText = await fileScanner.scanFile(zoomedFile, true);
+      } catch (zoomError) {
+        fileScanner.clear();
+        fileScanner = new Html5Qrcode('fileReader');
+        decodedText = await fileScanner.scanFile(file, true);
+      }
 
       $('barcode').value = normalizeBarcode(decodedText);
 
-      showMessage(
-        '사진 바코드 인식 완료: ' + $('barcode').value +
-        '\n저장 전에 실제 라벨 번호와 일치하는지 확인해 주세요.',
-        true
-      );
+      await showBarcodeStatus($('barcode').value);
     } catch (error) {
       showError(
         '사진에서 바코드를 인식하지 못했습니다.\n' +
@@ -498,6 +564,52 @@
       $('photoInput').value = '';
       $('photoButton').disabled = false;
       $('photoButton').textContent = '사진 촬영으로 바코드 읽기';
+    }
+  }
+
+  async function createZoomedPhoto(file, zoom) {
+    const bitmap = await createImageBitmap(file);
+    const cropWidth = Math.max(1, Math.floor(bitmap.width / zoom));
+    const cropHeight = Math.max(1, Math.floor(bitmap.height / zoom));
+    const sx = Math.floor((bitmap.width - cropWidth) / 2);
+    const sy = Math.floor((bitmap.height - cropHeight) / 2);
+    const canvas = document.createElement('canvas');
+
+    canvas.width = Math.min(bitmap.width, 2400);
+    canvas.height = Math.round(canvas.width * cropHeight / cropWidth);
+    canvas.getContext('2d').drawImage(
+      bitmap,
+      sx, sy, cropWidth, cropHeight,
+      0, 0, canvas.width, canvas.height
+    );
+    bitmap.close();
+
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        value => value ? resolve(value) : reject(new Error('사진 확대 실패')),
+        'image/jpeg',
+        0.92
+      );
+    });
+
+    return new File([blob], 'capa-zoom-2x.jpg', { type: 'image/jpeg' });
+  }
+
+  async function showBarcodeStatus(barcode) {
+    try {
+      const result = await callApi({
+        api: 'status',
+        barcode: barcode
+      });
+
+      showMessage(
+        '사진 바코드 인식 완료: ' + result.barcode + '\n' +
+        result.managementNo + ' / ' + result.itemName + '\n' +
+        result.message,
+        result.status !== '완료'
+      );
+    } catch (error) {
+      handleApiError(error);
     }
   }
 
@@ -561,6 +673,8 @@
         true
       );
 
+      renderActiveWorks(result.activeWorks || []);
+
       $('barcode').value = '';
     } catch (error) {
       handleApiError(error);
@@ -568,6 +682,29 @@
       $('saveButton').disabled = false;
       $('saveButton').textContent = '작업 기록 저장';
     }
+  }
+
+  function renderActiveWorks(items) {
+    if (!items || items.length === 0) {
+      $('activeList').innerHTML =
+        '<div class="empty">현재 진행 중인 작업이 없습니다.</div>';
+      return;
+    }
+
+    $('activeList').innerHTML = items.slice(0, 5).map(item =>
+      '<div class="active-item">' +
+        '<div class="active-main">' +
+          escapeHtml(item.managementNo || item.barcode) +
+          '<span class="active-status">' + escapeHtml(item.status) + '</span>' +
+        '</div>' +
+        '<div class="active-sub">' +
+          escapeHtml(item.itemName || '') + ' · ' +
+          escapeHtml(item.workerName || '') + ' · ' +
+          escapeHtml(item.time || '') +
+        '</div>' +
+        '<div class="active-sub">' + escapeHtml(item.barcode) + '</div>' +
+      '</div>'
+    ).join('');
   }
 
   async function callApi(params) {
