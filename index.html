@@ -135,19 +135,6 @@
       display: none;
     }
 
-    .active-title { margin: 0 0 10px; font-size: 17px; }
-    .active-list { display: grid; gap: 8px; }
-    .active-item {
-      padding: 11px 12px;
-      border: 1px solid #dde4ec;
-      border-radius: 10px;
-      background: #f8fafc;
-    }
-    .active-main { font-size: 14px; font-weight: 800; }
-    .active-sub { margin-top: 4px; color: #637083; font-size: 12px; }
-    .active-status { float: right; color: #176b3a; }
-    .empty { color: #637083; font-size: 14px; }
-
     #message {
       white-space: pre-line;
       line-height: 1.55;
@@ -284,12 +271,6 @@
 
     <section id="message" class="card hidden"></section>
 
-    <section class="card">
-      <h2 id="activeTitle" class="active-title">내 진행 중 작업 (최대 5개)</h2>
-      <div id="activeList" class="active-list">
-        <div class="empty">불러오는 중...</div>
-      </div>
-    </section>
   </section>
 </main>
 
@@ -313,7 +294,6 @@
 };
   $('photoInput').onchange = readPhoto;
   $('saveButton').onclick = save;
-  $('worker').onchange = workerChanged;
 
   $('accessPassword').addEventListener('keydown', event => {
     if (event.key === 'Enter') {
@@ -410,10 +390,7 @@
       '<option value="">불러오는 중...</option>';
 
     try {
-      const data = await callApi({
-        api: 'initial',
-        workerName: localStorage.getItem(WORKER_KEY) || ''
-      });
+      const data = await callApi({ api: 'initial' });
 
       initializeApp(data);
     } catch (error) {
@@ -434,11 +411,6 @@
 
     if (savedWorker && data.workers.includes(savedWorker)) {
       $('worker').value = savedWorker;
-      setActiveTitle(savedWorker);
-      renderActiveWorks(data.activeWorks || []);
-    } else {
-      setActiveTitle('');
-      renderActiveWorks([]);
     }
 
     $('actions').innerHTML = data.actions
@@ -458,37 +430,6 @@
     if (data.actions.includes(selectedAction)) {
       selectAction(selectedAction);
     }
-  }
-
-  async function workerChanged() {
-    const workerName = $('worker').value;
-
-    if (!workerName) {
-      localStorage.removeItem(WORKER_KEY);
-      setActiveTitle('');
-      renderActiveWorks([]);
-      return;
-    }
-
-    localStorage.setItem(WORKER_KEY, workerName);
-    setActiveTitle(workerName);
-    $('activeList').innerHTML = '<div class="empty">불러오는 중...</div>';
-
-    try {
-      const result = await callApi({
-        api: 'active',
-        workerName: workerName
-      });
-      renderActiveWorks(result.activeWorks || []);
-    } catch (error) {
-      handleApiError(error);
-    }
-  }
-
-  function setActiveTitle(workerName) {
-    $('activeTitle').textContent = workerName
-      ? workerName + ' 님의 진행 중 작업 (최대 5개)'
-      : '내 진행 중 작업 (최대 5개)';
   }
 
   function selectAction(action) {
@@ -673,8 +614,6 @@
         true
       );
 
-      renderActiveWorks(result.activeWorks || []);
-
       $('barcode').value = '';
     } catch (error) {
       handleApiError(error);
@@ -682,29 +621,6 @@
       $('saveButton').disabled = false;
       $('saveButton').textContent = '작업 기록 저장';
     }
-  }
-
-  function renderActiveWorks(items) {
-    if (!items || items.length === 0) {
-      $('activeList').innerHTML =
-        '<div class="empty">현재 진행 중인 작업이 없습니다.</div>';
-      return;
-    }
-
-    $('activeList').innerHTML = items.slice(0, 5).map(item =>
-      '<div class="active-item">' +
-        '<div class="active-main">' +
-          escapeHtml(item.managementNo || item.barcode) +
-          '<span class="active-status">' + escapeHtml(item.status) + '</span>' +
-        '</div>' +
-        '<div class="active-sub">' +
-          escapeHtml(item.itemName || '') + ' · ' +
-          escapeHtml(item.workerName || '') + ' · ' +
-          escapeHtml(item.time || '') +
-        '</div>' +
-        '<div class="active-sub">' + escapeHtml(item.barcode) + '</div>' +
-      '</div>'
-    ).join('');
   }
 
   async function callApi(params) {
