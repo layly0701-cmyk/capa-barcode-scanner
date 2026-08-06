@@ -285,7 +285,7 @@
     <section id="message" class="card hidden"></section>
 
     <section class="card">
-      <h2 class="active-title">현재 진행 중인 작업 (최대 5개)</h2>
+      <h2 id="activeTitle" class="active-title">내 진행 중 작업 (최대 5개)</h2>
       <div id="activeList" class="active-list">
         <div class="empty">불러오는 중...</div>
       </div>
@@ -313,6 +313,7 @@
 };
   $('photoInput').onchange = readPhoto;
   $('saveButton').onclick = save;
+  $('worker').onchange = workerChanged;
 
   $('accessPassword').addEventListener('keydown', event => {
     if (event.key === 'Enter') {
@@ -410,7 +411,8 @@
 
     try {
       const data = await callApi({
-        api: 'initial'
+        api: 'initial',
+        workerName: localStorage.getItem(WORKER_KEY) || ''
       });
 
       initializeApp(data);
@@ -420,7 +422,6 @@
   }
 
   function initializeApp(data) {
-    renderActiveWorks(data.activeWorks || []);
     $('worker').innerHTML =
       '<option value="">작업자 선택</option>' +
       data.workers
@@ -433,6 +434,11 @@
 
     if (savedWorker && data.workers.includes(savedWorker)) {
       $('worker').value = savedWorker;
+      setActiveTitle(savedWorker);
+      renderActiveWorks(data.activeWorks || []);
+    } else {
+      setActiveTitle('');
+      renderActiveWorks([]);
     }
 
     $('actions').innerHTML = data.actions
@@ -452,6 +458,37 @@
     if (data.actions.includes(selectedAction)) {
       selectAction(selectedAction);
     }
+  }
+
+  async function workerChanged() {
+    const workerName = $('worker').value;
+
+    if (!workerName) {
+      localStorage.removeItem(WORKER_KEY);
+      setActiveTitle('');
+      renderActiveWorks([]);
+      return;
+    }
+
+    localStorage.setItem(WORKER_KEY, workerName);
+    setActiveTitle(workerName);
+    $('activeList').innerHTML = '<div class="empty">불러오는 중...</div>';
+
+    try {
+      const result = await callApi({
+        api: 'active',
+        workerName: workerName
+      });
+      renderActiveWorks(result.activeWorks || []);
+    } catch (error) {
+      handleApiError(error);
+    }
+  }
+
+  function setActiveTitle(workerName) {
+    $('activeTitle').textContent = workerName
+      ? workerName + ' 님의 진행 중 작업 (최대 5개)'
+      : '내 진행 중 작업 (최대 5개)';
   }
 
   function selectAction(action) {
@@ -571,7 +608,6 @@
         result.message,
         result.status !== '완료'
       );
-      renderActiveWorks(result.activeWorks || []);
     } catch (error) {
       handleApiError(error);
     }
