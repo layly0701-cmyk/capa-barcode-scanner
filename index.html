@@ -1,855 +1,1821 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
-  >
-
-  <title>상일비전 CAPA 바코드 스캔</title>
-
+  <base target="_top">
+  <meta charset="UTF-8">
+  <title>상일비전 SP 바코드 공정관리</title>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
   <style>
-    * {
-      box-sizing: border-box;
+    :root {
+      --ink: #142033;
+      --muted: #68758a;
+      --line: #dce3ec;
+      --blue: #1669e8;
+      --blue-dark: #0b4fbc;
+      --green: #0ca66c;
+      --red: #df4242;
+      --amber: #e49a18;
+      --surface: #fff;
+      --canvas: #eff3f8;
     }
 
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--canvas); }
     body {
-      margin: 0;
-      background: #f4f6f8;
-      color: #17202a;
+      color: var(--ink);
       font-family: Arial, "Noto Sans KR", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    [hidden] { display: none !important; }
+
+    .shell {
+      width: min(100%, 760px);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 15px 12px 30px;
     }
 
-    main {
-      max-width: 560px;
-      margin: auto;
-      padding: 18px 14px 40px;
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px 2px 15px;
     }
-
-    h1 {
-      margin: 0 0 6px;
-      font-size: 24px;
+    .eyebrow {
+      margin: 0 0 4px;
+      color: var(--blue);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .14em;
     }
-
-    .sub,
-    .hint {
-      color: #637083;
-      font-size: 14px;
-      line-height: 1.55;
+    h1 { margin: 0; font-size: 22px; letter-spacing: -.04em; }
+    .separate {
+      padding: 7px 9px;
+      border: 1px solid #cadcf8;
+      border-radius: 999px;
+      background: #edf4ff;
+      color: var(--blue-dark);
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
     }
 
     .card {
-      background: #fff;
-      padding: 16px;
-      margin-bottom: 14px;
-      border-radius: 14px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: 0 9px 26px rgba(33, 52, 78, .07);
     }
 
-    label {
-      display: block;
-      margin-bottom: 7px;
-      font-weight: 700;
+    .login-wrap {
+      display: grid;
+      min-height: calc(100vh - 80px);
+      place-items: center;
     }
-
-    select,
-    input {
+    .login-card { width: min(100%, 430px); padding: 24px; }
+    .login-mark {
+      display: grid;
+      width: 58px;
+      height: 58px;
+      margin-bottom: 18px;
+      place-items: center;
+      border-radius: 18px;
+      background: var(--blue);
+      color: white;
+      font-size: 23px;
+      font-weight: 900;
+    }
+    .login-card h2 { margin: 0 0 7px; font-size: 23px; }
+    .login-card p { margin: 0 0 19px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .login-card input {
       width: 100%;
+      height: 52px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      outline: none;
+    }
+    .login-card input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(22,105,232,.12); }
+    .primary {
+      width: 100%;
+      height: 52px;
+      margin-top: 10px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--blue);
+      color: white;
+      font-weight: 900;
+    }
+    .login-error { min-height: 18px; margin: 10px 0 0 !important; color: var(--red) !important; }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+      padding: 14px;
+      margin-bottom: 11px;
+    }
+    .worker-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 145px;
+      gap: 8px;
+    }
+    .field, .process-field { display: flex; flex-direction: column; gap: 7px; }
+    .field > span, .process-field > span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+    select {
+      width: 100%;
+      height: 48px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      outline: none;
+      background: #f9fbfd;
+      color: var(--ink);
+      font-weight: 800;
+    }
+    .process-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .process-tab {
       min-height: 48px;
-      padding: 10px 12px;
-      border: 1px solid #cfd6df;
-      border-radius: 9px;
-      background: #fff;
-      font-size: 17px;
+      padding: 6px 3px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fafc;
+      color: #5c687b;
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .process-tab small { display: block; margin-top: 3px; color: #8d98a8; font-size: 9px; }
+    .process-tab.active {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: white;
+      box-shadow: 0 6px 13px rgba(22,105,232,.22);
+    }
+    .process-tab.active small { color: #dce9ff; }
+    .process-tab:disabled, select:disabled { cursor: not-allowed; opacity: .65; }
+
+    .session-card {
+      margin-bottom: 11px;
+      padding: 14px;
+    }
+    .session-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .session-head strong { font-size: 14px; }
+    .session-status {
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: #eef2f7;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+    }
+    .session-status.active { background: #e7f8f1; color: #087c51; }
+    .session-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .session-summary div {
+      min-width: 0;
+      padding: 10px 5px;
+      border-radius: 10px;
+      background: #f5f7fa;
+      text-align: center;
+    }
+    .session-summary span, .session-summary strong { display: block; }
+    .session-summary span { color: var(--muted); font-size: 9px; }
+    .session-summary strong { margin-top: 4px; font-size: 15px; }
+    .session-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .session-buttons button {
+      height: 48px;
+      border: 0;
+      border-radius: 11px;
+      color: white;
+      font-weight: 900;
+    }
+    .work-start { background: var(--green); }
+    .work-end { background: var(--red); }
+    .session-buttons button:disabled { background: #c5ccd6; cursor: not-allowed; }
+
+    .scanner-card {
+      overflow: hidden;
+      padding: 14px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .scanner-card.success { border-color: var(--green); box-shadow: 0 0 0 4px rgba(12,166,108,.12); }
+    .scanner-card.error { border-color: var(--red); box-shadow: 0 0 0 4px rgba(223,66,66,.13); }
+    .scanner-card.warning { border-color: var(--amber); box-shadow: 0 0 0 4px rgba(228,154,24,.14); }
+
+    .scanner-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .scanner-head strong { color: var(--ink); }
+    .scanner-head-left { display: flex; align-items: center; gap: 7px; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #aeb8c7; }
+    .live-dot.on { background: var(--green); box-shadow: 0 0 0 5px rgba(12,166,108,.12); }
+
+    .reader-wrap {
+      position: relative;
+      display: grid;
+      min-height: 270px;
+      overflow: hidden;
+      place-items: center;
+      border-radius: 15px;
+      background: repeating-linear-gradient(135deg,#17263b 0 16px,#1c2e47 16px 32px);
+    }
+    #reader { width: 100%; min-height: 270px; }
+    #reader video { object-fit: cover; }
+    #reader img { display: none; }
+    #reader__dashboard_section_csr button,
+    #reader__dashboard_section_swaplink { font-size: 12px !important; }
+    .start-overlay {
+      position: absolute;
+      z-index: 3;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+      justify-content: center;
+      border: 0;
+      background: transparent;
+      color: white;
+      font-size: 18px;
+      font-weight: 900;
+    }
+    .start-overlay small { margin-top: 8px; color: #bcc9da; font-size: 10px; font-weight: 500; }
+    .camera-icon {
+      position: relative;
+      width: 56px;
+      height: 41px;
+      margin-bottom: 14px;
+      border: 3px solid white;
+      border-radius: 10px;
+    }
+    .camera-icon:before {
+      position: absolute;
+      top: -9px;
+      left: 14px;
+      width: 23px;
+      height: 8px;
+      border-radius: 5px 5px 0 0;
+      background: white;
+      content: "";
+    }
+    .camera-icon:after {
+      position: absolute;
+      top: 8px;
+      left: 16px;
+      width: 17px;
+      height: 17px;
+      border: 3px solid white;
+      border-radius: 50%;
+      content: "";
+    }
+
+    .queue-badge {
+      position: absolute;
+      z-index: 5;
+      top: 10px;
+      right: 10px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(10, 22, 38, .82);
+      color: white;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .result {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-height: 72px;
+      margin-top: 11px;
+      padding: 11px 12px;
+      border: 1px solid #dbe5f2;
+      border-radius: 13px;
+      background: #f7faff;
+    }
+    .result-mark {
+      display: grid;
+      flex: none;
+      width: 41px;
+      height: 41px;
+      place-items: center;
+      border-radius: 50%;
+      background: #e5eefc;
+      color: var(--blue);
+      font-size: 21px;
+      font-weight: 900;
+    }
+    .result strong, .result span { display: block; }
+    .result strong { margin-bottom: 4px; font-size: 16px; }
+    .result span { color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .scanner-card.success .result { border-color: #b9ead7; background: #f0fcf7; }
+    .scanner-card.success .result-mark { background: var(--green); color: white; }
+    .scanner-card.error .result { border-color: #f2c2c2; background: #fff4f4; }
+    .scanner-card.error .result-mark { background: var(--red); color: white; }
+    .scanner-card.warning .result { border-color: #f1d49d; background: #fffaf0; }
+    .scanner-card.warning .result-mark { background: var(--amber); color: white; }
+
+    .manual {
+      display: grid;
+      grid-template-columns: 1fr 112px;
+      gap: 7px;
+      margin-top: 9px;
+    }
+    .manual input {
+      min-width: 0;
+      height: 45px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+      text-transform: uppercase;
+    }
+    .manual button {
+      border: 0;
+      border-radius: 10px;
+      background: var(--ink);
+      color: white;
+      font-size: 12px;
+      font-weight: 900;
     }
 
     .actions {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 9px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 11px 0;
     }
-
-    button {
-      min-height: 48px;
-      border: 0;
-      border-radius: 9px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      opacity: .5;
-      cursor: default;
-    }
-
     .action {
-      background: #edf1f5;
-      color: #17202a;
+      display: flex;
+      min-height: 58px;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: white;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 900;
+      box-shadow: 0 5px 15px rgba(33,52,78,.05);
+    }
+    .action b { color: var(--blue); font-size: 20px; }
+    .action.cancel { border-color: #f1cccc; color: #b63131; }
+    .action.cancel b { color: var(--red); }
+    .action:disabled { cursor: not-allowed; opacity: .45; }
+
+    .recent { padding: 14px; }
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .section-head p { margin: 0 0 3px; color: var(--blue); font-size: 9px; font-weight: 900; letter-spacing: .14em; }
+    .section-head h2 { margin: 0; font-size: 17px; }
+    .refresh {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .event {
+      display: grid;
+      grid-template-columns: 31px 1fr auto;
+      align-items: center;
+      gap: 9px;
+      min-height: 64px;
+      border-top: 1px solid #edf0f4;
+    }
+    .event:first-child { border-top: 0; }
+    .event-mark {
+      display: grid;
+      width: 27px;
+      height: 27px;
+      place-items: center;
+      border-radius: 50%;
+      background: #e7f8f1;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .event.cancelled .event-mark { background: #f0f1f3; color: #7e8795; }
+    .event.changed .event-mark { background: #eaf2ff; color: var(--blue); }
+    .event-main strong, .event-main span, .event-main small { display: block; }
+    .event-main strong { margin-bottom: 3px; font-size: 12px; }
+    .event-main span, .event-main small, .event time { color: var(--muted); font-size: 9px; }
+    .event-main small { margin-top: 3px; color: var(--blue-dark); }
+    .empty { padding: 24px 10px; color: var(--muted); font-size: 11px; text-align: center; }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      padding: 14px 2px 0;
+      color: #8b96a7;
+      font-size: 9px;
     }
 
-    .action.selected {
-      background: #fee500;
-      color: #111;
-      outline: 2px solid #111;
+    .modal-backdrop {
+      position: fixed;
+      z-index: 30;
+      inset: 0;
+      display: grid;
+      padding: 14px;
+      place-items: center;
+      background: rgba(10,20,35,.62);
+      backdrop-filter: blur(5px);
     }
-
-    .photo {
-      width: 100%;
-      margin-top: 10px;
-      background: #293f8f;
-      color: #fff;
+    .modal {
+      width: min(100%, 440px);
+      max-height: 84vh;
+      overflow: auto;
+      padding: 18px;
+      border-radius: 19px;
+      background: white;
+      box-shadow: 0 24px 70px rgba(4,16,35,.28);
     }
-
-    .save {
-      width: 100%;
-      background: #111;
-      color: #fff;
+    .modal-head { display: flex; align-items: flex-start; justify-content: space-between; }
+    .modal-head p { margin: 0 0 3px; color: var(--blue); font-size: 10px; font-weight: 900; }
+    .modal-head h2 { margin: 0; font-size: 22px; }
+    .modal-close {
+      width: 35px;
+      height: 35px;
+      border: 0;
+      border-radius: 50%;
+      background: #f1f4f8;
+      color: var(--muted);
+      font-size: 21px;
     }
-
-    .login-button {
-      width: 100%;
-      margin-top: 12px;
-      background: #fee500;
-      color: #111;
+    .modal-guide { color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .current-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 15px 0 10px;
+      padding: 13px;
+      border-radius: 11px;
+      background: #f2f6fc;
     }
-
-    .logout {
-      float: right;
-      min-height: 34px;
-      padding: 4px 10px;
-      background: #e8edf3;
-      color: #334155;
-      font-size: 13px;
+    .current-box span { color: var(--muted); font-size: 11px; }
+    .current-box strong { color: var(--blue-dark); }
+    .candidate-list { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
+    .candidate {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 13px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: white;
+      text-align: left;
     }
-
-    .hidden {
-      display: none !important;
+    .candidate strong, .candidate small { display: block; }
+    .candidate small { margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .candidate b { color: var(--blue); font-size: 11px; }
+    .confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+    .confirm-actions button {
+      height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: white;
+      font-weight: 900;
     }
+    .confirm-actions .danger { border-color: var(--red); background: var(--red); color: white; }
 
-    #fileReader {
-      display: none;
+    .toast {
+      position: fixed;
+      z-index: 50;
+      right: 14px;
+      bottom: 14px;
+      left: 14px;
+      max-width: 520px;
+      margin: auto;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #132136;
+      color: white;
+      font-size: 11px;
+      box-shadow: 0 12px 35px rgba(5,15,30,.28);
+      transform: translateY(120px);
+      opacity: 0;
+      transition: .2s;
     }
+    .toast.show { transform: translateY(0); opacity: 1; }
 
-    .active-title { margin: 0 0 10px; font-size: 17px; }
-    .active-list { display: grid; gap: 8px; }
-    .active-item {
-      padding: 11px 12px;
-      border: 1px solid #dde4ec;
-      border-radius: 10px;
-      background: #f8fafc;
+    @media (max-width: 600px) {
+      .reader-wrap, #reader { min-height: 235px; }
+      .action { min-height: 60px; padding: 7px 4px; flex-direction: column; gap: 2px; font-size: 10px; }
+      footer { flex-direction: column; gap: 4px; }
     }
-    .active-main { font-size: 14px; font-weight: 800; }
-    .active-sub { margin-top: 4px; color: #637083; font-size: 12px; }
-    .active-status { float: right; color: #176b3a; }
-    .empty { color: #637083; font-size: 14px; }
-
-    #message {
-      white-space: pre-line;
-      line-height: 1.55;
-    }
-
-    .ok {
-      background: #e9f8ef;
-      color: #176b3a;
-    }
-
-    .error {
-      background: #fff0f0;
-      color: #a12626;
-    }
-
-    .login-info {
-      padding: 12px;
-      margin-bottom: 14px;
-      border-radius: 9px;
-      background: #eef3f8;
-      color: #475569;
-      font-size: 14px;
-      line-height: 1.55;
+    @media (max-width: 390px) {
+      .worker-grid { grid-template-columns: minmax(0, 1fr) 116px; }
+      .process-tabs { grid-template-columns: repeat(2, 1fr); }
+      .session-summary { grid-template-columns: repeat(2, 1fr); }
+      .manual { grid-template-columns: 1fr 96px; }
     }
   </style>
 </head>
-
 <body>
-<main>
-  <section id="loginSection">
-    <h1>CAPA 작업자 인증</h1>
-    <p class="sub">관리자가 안내한 공용 비밀번호를 입력해 주세요.</p>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">상일비전 · SP 전용</p>
+        <h1>SP 바코드 공정관리</h1>
+      </div>
+      <span class="separate">CAPA와 별도 운영</span>
+    </header>
 
-    <section class="card">
-      <label for="accessPassword">접속 비밀번호</label>
-
-      <input
-        id="accessPassword"
-        type="password"
-        placeholder="비밀번호 입력"
-        autocomplete="current-password"
-      >
-
-      <button id="loginButton" class="login-button" type="button">
-        CAPA 스캔 시작
-      </button>
+    <section id="loginView" class="login-wrap">
+      <form id="loginForm" class="card login-card">
+        <div class="login-mark">SP</div>
+        <h2>SP 작업자 접속</h2>
+        <p>관리자가 설정한 SP 전용 비밀번호를 입력하세요.<br>한 번 로그인하면 이 휴대폰에 접속정보가 저장됩니다.</p>
+        <input id="password" type="password" autocomplete="current-password" placeholder="접속 비밀번호" required>
+        <button id="loginButton" class="primary" type="submit">접속하기</button>
+        <p id="loginError" class="login-error"></p>
+      </form>
     </section>
 
-    <div class="login-info">
-      인증 완료 후 이 휴대전화에서는 30일 동안 비밀번호 입력을 생략할 수 있습니다.
-    </div>
+    <section id="appView" hidden>
+      <section class="card controls">
+        <div class="worker-grid">
+          <label class="field">
+            <span>작업자</span>
+            <select id="workerSelect"></select>
+          </label>
+          <label class="field">
+            <span>추가 작업인원</span>
+            <select id="additionalWorkers"></select>
+          </label>
+        </div>
+        <div class="process-field">
+          <span>작업공정</span>
+          <div id="processTabs" class="process-tabs"></div>
+        </div>
+      </section>
 
-    <section id="loginMessage" class="card error hidden"></section>
-  </section>
+      <section class="card session-card">
+        <div class="session-head">
+          <strong id="sessionTitle">작업 시작 전</strong>
+          <span id="sessionStatus" class="session-status">대기</span>
+        </div>
+        <div class="session-summary">
+          <div><span>총 작업인원</span><strong id="totalWorkers">1명</strong></div>
+          <div><span>총 소요시간</span><strong id="elapsedTime">00:00:00</strong></div>
+          <div><span>스캔수량</span><strong id="sessionScanCount">0건</strong></div>
+          <div><span>투입공수</span><strong id="laborHours">0.00시간</strong></div>
+        </div>
+        <div class="session-buttons">
+          <button id="startWork" class="work-start" type="button">작업 시작</button>
+          <button id="endWork" class="work-end" type="button" disabled>작업 종료</button>
+        </div>
+      </section>
 
-  <section id="appSection" class="hidden">
-    <button id="logoutButton" class="logout" type="button">
-      인증 초기화
-    </button>
+      <section id="scannerCard" class="card scanner-card">
+        <div class="scanner-head">
+          <div class="scanner-head-left">
+            <span id="liveDot" class="live-dot"></span>
+            <strong id="cameraStatus">카메라 대기</strong>
+          </div>
+          <span id="processMode">입고검사 모드</span>
+        </div>
 
-    <h1>CAPA 바코드 스캔</h1>
-    <p class="sub">작업자와 작업을 선택한 뒤 제품 바코드를 촬영하세요.</p>
+        <div class="reader-wrap">
+          <div id="reader"></div>
+          <div id="photoReader" hidden></div>
+          <input
+            id="photoInput"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            hidden
+          >
+          <button id="startScanner" class="start-overlay" type="button">
+            <span class="camera-icon"></span>
+            카메라 스캔 시작
+            <small>한 번 누르면 소리와 진동도 활성화됩니다</small>
+          </button>
+          <span id="queueBadge" class="queue-badge" hidden>전송대기 0</span>
+        </div>
 
-    <section class="card">
-      <label for="worker">작업자</label>
-      <select id="worker">
-        <option value="">불러오는 중...</option>
-      </select>
+        <div class="result" role="status" aria-live="polite">
+          <div id="resultMark" class="result-mark">◎</div>
+          <div>
+            <strong id="resultTitle">작업자와 공정을 확인하고 스캔을 시작하세요.</strong>
+            <span id="resultDetail">스캔 성공 후 관리호차가 즉시 표시됩니다.</span>
+          </div>
+        </div>
+
+        <form id="manualForm" class="manual">
+          <input id="manualCode" autocomplete="off" placeholder="바코드 또는 품번 직접 입력">
+          <button type="submit">직접 등록</button>
+        </form>
+      </section>
+
+      <section class="actions">
+        <button id="cancelButton" class="action cancel" type="button" disabled>
+          <b>↶</b><span>마지막 스캔 취소</span>
+        </button>
+        <button id="changeButton" class="action" type="button" disabled>
+          <b>⇄</b><span>호차 변경</span>
+        </button>
+        <button id="refreshButton" class="action" type="button">
+          <b>↻</b><span>최근 이력 새로고침</span>
+        </button>
+      </section>
+
+      <section class="card recent">
+        <div class="section-head">
+          <div>
+            <p>RECENT SCANS</p>
+            <h2>최근 스캔</h2>
+          </div>
+          <button id="logoutButton" class="refresh" type="button">로그아웃</button>
+        </div>
+        <div id="eventList"><div class="empty">아직 스캔된 제품이 없습니다.</div></div>
+      </section>
+
+      <footer>
+        <span>입고검사 → 서열조합 → 검수 → 발송확인</span>
+        <span>SP 전용 Google Sheets 자동저장</span>
+      </footer>
     </section>
+  </div>
 
-    <section class="card">
-      <label>작업 종류</label>
-      <div id="actions" class="actions"></div>
+  <div id="vehicleModal" class="modal-backdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <div>
+          <p>관리호차 재배정</p>
+          <h2 id="vehiclePartNo">-</h2>
+        </div>
+        <button class="modal-close" data-close="vehicleModal" type="button">×</button>
+      </div>
+      <div class="current-box"><span>현재 배정</span><strong id="currentVehicle">-</strong></div>
+      <p id="vehicleChangeGuide" class="modal-guide">변경할 제품의 QR을 먼저 스캔하세요.</p>
+      <form id="vehicleChangeForm" class="manual">
+        <input id="changeTargetInput" autocomplete="off" placeholder="새 관리호차 수기 입력" disabled>
+        <button id="confirmVehicleChange" type="submit" disabled>변경 확정</button>
+      </form>
+      <div id="candidateList" class="candidate-list"></div>
     </section>
+  </div>
 
-    <section id="processBox" class="card hidden">
-      <label for="process">중단·재시작 공정</label>
-
-      <select id="process">
-        <option value="">공정 선택</option>
-        <option value="포선">포선</option>
-        <option value="외장">외장</option>
-      </select>
-    </section>
-
-    <section id="reasonBox" class="card hidden">
-      <label for="reason">중단 사유</label>
-
-      <select id="reason">
-        <option value="">중단 사유 선택</option>
-        <option value="자재 대기">자재 대기</option>
-        <option value="사양 확인">사양 확인</option>
-        <option value="품질 확인">품질 확인</option>
-        <option value="설비·공구 문제">설비·공구 문제</option>
-        <option value="타 작업 지원">타 작업 지원</option>
-        <option value="작업자 이석">작업자 이석</option>
-        <option value="기타">기타</option>
-      </select>
-    </section>
-
-    <section class="card">
-      <label for="barcode">제품 바코드</label>
-
-      <input
-        id="barcode"
-        placeholder="예: Q829Z23S#1"
-        autocomplete="off"
-        autocapitalize="characters"
-      >
-
-      <div id="fileReader"></div>
-
-      <button id="photoButton" class="photo" type="button">
-        사진 촬영으로 바코드 읽기
-      </button>
-
-      <input
-        id="photoInput"
-        class="hidden"
-        type="file"
-        accept="image/*"
-        capture="environment"
-      >
-
-      <p class="hint">
-        라벨의 상단 바코드를 화면 중앙에 가로로 크게 촬영해 주세요.
-        촬영 사진은 중앙 영역을 2배 확대하여 먼저 판독합니다.
-      </p>
-    </section>
-
-    <button id="saveButton" class="save" type="button">
-      작업 기록 저장
-    </button>
-
-    <section id="message" class="card hidden"></section>
-
-    <section class="card">
-      <h2 id="activeTitle" class="active-title">내 진행 중 작업 (최대 5개)</h2>
-      <div id="activeList" class="active-list">
-        <div class="empty">불러오는 중...</div>
+  <div id="cancelModal" class="modal-backdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <div>
+          <p>스캔기록 취소</p>
+          <h2 id="cancelTarget">-</h2>
+        </div>
+        <button class="modal-close" data-close="cancelModal" type="button">×</button>
+      </div>
+      <p class="modal-guide">해당 공정시간을 지우고 호차를 다시 스캔 가능한 상태로 되돌립니다. 취소이력은 삭제되지 않습니다.</p>
+      <div class="confirm-actions">
+        <button data-close="cancelModal" type="button">돌아가기</button>
+        <button id="confirmCancel" class="danger" type="button">취소 확정</button>
       </div>
     </section>
-  </section>
-</main>
+  </div>
 
-<script>
-  const API_URL =
-    'https://script.google.com/macros/s/AKfycbzyGn4TJU62xu_BxCyjsfHpba0KML1mqLzpQ3t4j57FUuMMNcYlzk6_t6gyEpexWVdhYg/exec';
+  <div id="toast" class="toast"></div>
 
-  const TOKEN_KEY = 'capaAccessToken';
-  const WORKER_KEY = 'capaWorker';
-
-  const $ = id => document.getElementById(id);
-
-  let selectedAction =
-    new URLSearchParams(location.search).get('action') || '';
-
-  $('loginButton').onclick = login;
-  $('logoutButton').onclick = logout;
-  $('photoButton').onclick = () => {
-  $('photoInput').value = '';
-  $('photoInput').click();
-};
-  $('photoInput').onchange = readPhoto;
-  $('saveButton').onclick = save;
-  $('worker').onchange = workerChanged;
-
-  $('accessPassword').addEventListener('keydown', event => {
-    if (event.key === 'Enter') {
-      login();
-    }
-  });
-
-  startPage();
-
-  function startPage() {
-    const token = localStorage.getItem(TOKEN_KEY);
-
-    if (!token) {
-      showLogin();
-      return;
-    }
-
-    showApp();
-    loadInitialData();
-  }
-
-  function showLogin(message) {
-    $('appSection').classList.add('hidden');
-    $('loginSection').classList.remove('hidden');
-
-    if (message) {
-      $('loginMessage').textContent = message;
-      $('loginMessage').classList.remove('hidden');
-    } else {
-      $('loginMessage').classList.add('hidden');
-    }
-
-    setTimeout(() => $('accessPassword').focus(), 100);
-  }
-
-  function showApp() {
-    $('loginSection').classList.add('hidden');
-    $('appSection').classList.remove('hidden');
-  }
-
-  async function login() {
-    const password = $('accessPassword').value.trim();
-
-    if (!password) {
-      showLoginError('접속 비밀번호를 입력해 주세요.');
-      return;
-    }
-
-    $('loginButton').disabled = true;
-    $('loginButton').textContent = '인증 중...';
-
-    try {
-      const response = await jsonp({
-        api: 'login',
-        password: password
-      });
-
-      if (!response.ok) {
-        throw new Error(response.error || '비밀번호 인증에 실패했습니다.');
-      }
-
-      if (!response.data || !response.data.token) {
-        throw new Error('인증 토큰을 발급받지 못했습니다.');
-      }
-
-      localStorage.setItem(TOKEN_KEY, response.data.token);
-
-      $('accessPassword').value = '';
-      $('loginMessage').classList.add('hidden');
-
-      showApp();
-      await loadInitialData();
-    } catch (error) {
-      showLoginError(
-        error && error.message
-          ? error.message
-          : String(error)
-      );
-    } finally {
-      $('loginButton').disabled = false;
-      $('loginButton').textContent = 'CAPA 스캔 시작';
-    }
-  }
-
-  function logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(WORKER_KEY);
-
-    showLogin('이 휴대전화의 인증정보를 초기화했습니다.');
-  }
-
-  async function loadInitialData() {
-    $('worker').innerHTML =
-      '<option value="">불러오는 중...</option>';
-
-    try {
-      const data = await callApi({
-        api: 'initial',
-        workerName: localStorage.getItem(WORKER_KEY) || ''
-      });
-
-      initializeApp(data);
-    } catch (error) {
-      handleApiError(error);
-    }
-  }
-
-  function initializeApp(data) {
-    $('worker').innerHTML =
-      '<option value="">작업자 선택</option>' +
-      data.workers
-        .map(name =>
-          `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
-        )
-        .join('');
-
-    const savedWorker = localStorage.getItem(WORKER_KEY);
-
-    if (savedWorker && data.workers.includes(savedWorker)) {
-      $('worker').value = savedWorker;
-      setActiveTitle(savedWorker);
-      renderActiveWorks(data.activeWorks || []);
-    } else {
-      setActiveTitle('');
-      renderActiveWorks([]);
-    }
-
-    $('actions').innerHTML = data.actions
-      .map(action =>
-        `<button
-          type="button"
-          class="action"
-          data-action="${escapeHtml(action)}"
-        >${escapeHtml(action)}</button>`
-      )
-      .join('');
-
-    document.querySelectorAll('.action').forEach(button => {
-      button.onclick = () => selectAction(button.dataset.action);
-    });
-
-    if (data.actions.includes(selectedAction)) {
-      selectAction(selectedAction);
-    }
-  }
-
-  async function workerChanged() {
-    const workerName = $('worker').value;
-
-    if (!workerName) {
-      localStorage.removeItem(WORKER_KEY);
-      setActiveTitle('');
-      renderActiveWorks([]);
-      return;
-    }
-
-    localStorage.setItem(WORKER_KEY, workerName);
-    setActiveTitle(workerName);
-    $('activeList').innerHTML = '<div class="empty">불러오는 중...</div>';
-
-    try {
-      const result = await callApi({
-        api: 'active',
-        workerName: workerName
-      });
-      renderActiveWorks(result.activeWorks || []);
-    } catch (error) {
-      handleApiError(error);
-    }
-  }
-
-  function setActiveTitle(workerName) {
-    $('activeTitle').textContent = workerName
-      ? workerName + ' 님의 진행 중 작업 (최대 5개)'
-      : '내 진행 중 작업 (최대 5개)';
-  }
-
-  function selectAction(action) {
-    selectedAction = action;
-
-    document.querySelectorAll('.action').forEach(button => {
-      button.classList.toggle(
-        'selected',
-        button.dataset.action === action
-      );
-    });
-
-    const needsProcess =
-      action === '작업 중단' ||
-      action === '작업 재시작';
-
-    $('processBox').classList.toggle('hidden', !needsProcess);
-    $('reasonBox').classList.toggle(
-      'hidden',
-      action !== '작업 중단'
-    );
-  }
-
-  async function readPhoto(event) {
-    const file =
-      event.target.files &&
-      event.target.files.length
-        ? event.target.files[0]
-        : null;
-
-    if (!file) {
-      return;
-    }
-
-    $('photoButton').disabled = true;
-    $('photoButton').textContent = '사진 판독 중...';
-
-    let fileScanner = null;
-
-    try {
-      fileScanner = new Html5Qrcode('fileReader');
-
-      let decodedText = '';
-
-      // 파일 촬영 방식은 카메라 광학 줌을 강제할 수 없으므로,
-      // 중앙 50% 영역을 2배 확대한 사진으로 먼저 판독합니다.
-      try {
-        const zoomedFile = await createZoomedPhoto(file, 2);
-        decodedText = await fileScanner.scanFile(zoomedFile, true);
-      } catch (zoomError) {
-        fileScanner.clear();
-        fileScanner = new Html5Qrcode('fileReader');
-        decodedText = await fileScanner.scanFile(file, true);
-      }
-
-      $('barcode').value = normalizeBarcode(decodedText);
-
-      await showBarcodeStatus($('barcode').value);
-    } catch (error) {
-      showError(
-        '사진에서 바코드를 인식하지 못했습니다.\n' +
-        '바코드가 선명하게 보이도록 가까이 촬영하거나 직접 입력해 주세요.'
-      );
-    } finally {
-      if (fileScanner) {
-        try {
-          fileScanner.clear();
-        } catch (error) {
-          console.log(error);
-        }
-      }
-
-      $('photoInput').value = '';
-      $('photoButton').disabled = false;
-      $('photoButton').textContent = '사진 촬영으로 바코드 읽기';
-    }
-  }
-
-  async function createZoomedPhoto(file, zoom) {
-    const bitmap = await createImageBitmap(file);
-    const cropWidth = Math.max(1, Math.floor(bitmap.width / zoom));
-    const cropHeight = Math.max(1, Math.floor(bitmap.height / zoom));
-    const sx = Math.floor((bitmap.width - cropWidth) / 2);
-    const sy = Math.floor((bitmap.height - cropHeight) / 2);
-    const canvas = document.createElement('canvas');
-
-    canvas.width = Math.min(bitmap.width, 2400);
-    canvas.height = Math.round(canvas.width * cropHeight / cropWidth);
-    canvas.getContext('2d').drawImage(
-      bitmap,
-      sx, sy, cropWidth, cropHeight,
-      0, 0, canvas.width, canvas.height
-    );
-    bitmap.close();
-
-    const blob = await new Promise((resolve, reject) => {
-      canvas.toBlob(
-        value => value ? resolve(value) : reject(new Error('사진 확대 실패')),
-        'image/jpeg',
-        0.92
-      );
-    });
-
-    return new File([blob], 'capa-zoom-2x.jpg', { type: 'image/jpeg' });
-  }
-
-  async function showBarcodeStatus(barcode) {
-    try {
-      const result = await callApi({
-        api: 'status',
-        barcode: barcode
-      });
-
-      showMessage(
-        '사진 바코드 인식 완료: ' + result.barcode + '\n' +
-        result.managementNo + ' / ' + result.itemName + '\n' +
-        result.message,
-        result.status !== '완료'
-      );
-    } catch (error) {
-      handleApiError(error);
-    }
-  }
-
-  async function save() {
-    const payload = {
-      api: 'record',
-      workerName: $('worker').value,
-      action: selectedAction,
-      barcode: normalizeBarcode($('barcode').value),
-      process: $('process').value,
-      reason: $('reason').value
+  <script>
+    const KEYS = {
+      token: 'sp_access_token_v1',
+      worker: 'sp_worker_v1',
+      additionalWorkers: 'sp_additional_workers_v1',
+      process: 'sp_process_v2',
+      device: 'sp_device_id_v1',
+      queue: 'sp_scan_queue_v1'
     };
 
-    if (!payload.workerName) {
-      showError('작업자를 선택해 주세요.');
-      return;
+    const state = {
+      token: localStorage.getItem(KEYS.token) || '',
+      deviceId: localStorage.getItem(KEYS.device) || createId('DEV'),
+      worker: localStorage.getItem(KEYS.worker) || '',
+      additionalWorkers: Number(localStorage.getItem(KEYS.additionalWorkers) || 0),
+      process: localStorage.getItem(KEYS.process) || '입고검사',
+      processes: ['입고검사', '서열조합', '검수', '발송확인'],
+      counts: {},
+      recent: [],
+      queue: readJson(KEYS.queue, []),
+      queueBusy: false,
+      scanner: null,
+      scannerRunning: false,
+      photoFallback: false,
+      vehicleChangeMode: false,
+      vehicleChangeSource: null,
+      lastDecoded: '',
+      lastSeenAt: 0,
+      lastOwnEvent: null,
+      session: null,
+      sessionTimer: null,
+      audio: null,
+      audioReady: false,
+      feedbackTimer: null
+    };
+    localStorage.setItem(KEYS.device, state.deviceId);
+
+    const el = {};
+    [
+      'loginView','loginForm','password','loginButton','loginError','appView',
+      'workerSelect','additionalWorkers','processTabs','processMode',
+      'sessionTitle','sessionStatus','totalWorkers','elapsedTime',
+      'sessionScanCount','laborHours','startWork','endWork',
+      'scannerCard','liveDot',
+      'cameraStatus','reader','photoReader','photoInput','startScanner','queueBadge','resultMark',
+      'resultTitle','resultDetail','manualForm','manualCode','cancelButton',
+      'changeButton','refreshButton','logoutButton','eventList','vehicleModal',
+      'vehiclePartNo','currentVehicle','candidateList','cancelModal',
+      'vehicleChangeGuide','vehicleChangeForm','changeTargetInput','confirmVehicleChange',
+      'cancelTarget','confirmCancel','toast'
+    ].forEach(id => el[id] = document.getElementById(id));
+
+    document.addEventListener('DOMContentLoaded', boot);
+
+    function boot() {
+      bindEvents();
+      updateQueueBadge();
+      if (state.token) {
+        loadInitial();
+      } else {
+        showLogin();
+      }
     }
 
-    if (!payload.action) {
-      showError('작업 종류를 선택해 주세요.');
-      return;
+    function bindEvents() {
+      el.loginForm.addEventListener('submit', login);
+      el.workerSelect.addEventListener('change', () => {
+        state.worker = el.workerSelect.value;
+        localStorage.setItem(KEYS.worker, state.worker);
+        updateOwnActions();
+      });
+      el.additionalWorkers.addEventListener('change', () => {
+        state.additionalWorkers = Number(el.additionalWorkers.value) || 0;
+        localStorage.setItem(KEYS.additionalWorkers, state.additionalWorkers);
+        renderSession();
+      });
+      el.startWork.addEventListener('click', startWork);
+      el.endWork.addEventListener('click', endWork);
+      el.startScanner.addEventListener('click', startScanner);
+      el.photoInput.addEventListener('change', readBarcodePhoto);
+      el.manualForm.addEventListener('submit', event => {
+        event.preventDefault();
+        const code = el.manualCode.value.trim();
+        if (!code) return;
+        unlockAudio();
+        acceptCode(code, true);
+        el.manualCode.value = '';
+      });
+      el.cancelButton.addEventListener('click', openCancel);
+      el.confirmCancel.addEventListener('click', cancelLast);
+      el.changeButton.addEventListener('click', openVehicleChange);
+      el.vehicleChangeForm.addEventListener('submit', changeVehicle);
+      el.refreshButton.addEventListener('click', refreshRecent);
+      el.logoutButton.addEventListener('click', logout);
+      ['pointerdown', 'touchstart', 'keydown'].forEach(eventName => {
+        document.addEventListener(eventName, unlockAudio, {
+          passive: true,
+          capture: true
+        });
+      });
+
+      document.querySelectorAll('[data-close]').forEach(button => {
+        button.addEventListener('click', () => {
+          if (button.dataset.close === 'vehicleModal') resetVehicleChange();
+          document.getElementById(button.dataset.close).hidden = true;
+        });
+      });
+      [el.vehicleModal, el.cancelModal].forEach(modal => {
+        modal.addEventListener('click', event => {
+          if (event.target === modal) {
+            if (modal === el.vehicleModal) resetVehicleChange();
+            modal.hidden = true;
+          }
+        });
+      });
     }
 
-    if (!payload.barcode) {
-      showError('바코드를 스캔하거나 입력해 주세요.');
-      return;
-    }
+    async function login(event) {
+      event.preventDefault();
+      const password = el.password.value;
+      if (!password) return;
 
-    if (
-      (
-        payload.action === '작업 중단' ||
-        payload.action === '작업 재시작'
-      ) &&
-      !payload.process
-    ) {
-      showError('중단 또는 재시작할 공정을 선택해 주세요.');
-      return;
-    }
+      el.loginButton.disabled = true;
+      el.loginButton.textContent = '확인 중...';
+      el.loginError.textContent = '';
 
-    if (
-      payload.action === '작업 중단' &&
-      !payload.reason
-    ) {
-      showError('중단 사유를 선택해 주세요.');
-      return;
-    }
-
-    localStorage.setItem(WORKER_KEY, payload.workerName);
-
-    $('saveButton').disabled = true;
-    $('saveButton').textContent = '저장 중...';
-
-    try {
-      const result = await callApi(payload);
-
-      showMessage(
-        result.message + '\n' +
-        result.time + '\n' +
-        result.workerName + ' / ' + result.managementNo + '\n' +
-        result.barcode,
-        true
-      );
-
-      renderActiveWorks(result.activeWorks || []);
-
-      $('barcode').value = '';
-    } catch (error) {
-      handleApiError(error);
-    } finally {
-      $('saveButton').disabled = false;
-      $('saveButton').textContent = '작업 기록 저장';
-    }
-  }
-
-  function renderActiveWorks(items) {
-    if (!items || items.length === 0) {
-      $('activeList').innerHTML =
-        '<div class="empty">현재 진행 중인 작업이 없습니다.</div>';
-      return;
-    }
-
-    $('activeList').innerHTML = items.slice(0, 5).map(item =>
-      '<div class="active-item">' +
-        '<div class="active-main">' +
-          escapeHtml(item.managementNo || item.barcode) +
-          '<span class="active-status">' + escapeHtml(item.status) + '</span>' +
-        '</div>' +
-        '<div class="active-sub">' +
-          escapeHtml(item.itemName || '') + ' · ' +
-          escapeHtml(item.workerName || '') + ' · ' +
-          escapeHtml(item.time || '') +
-        '</div>' +
-        '<div class="active-sub">' + escapeHtml(item.barcode) + '</div>' +
-      '</div>'
-    ).join('');
-  }
-
-  async function callApi(params) {
-    const token = localStorage.getItem(TOKEN_KEY);
-
-    if (!token) {
-      throw new Error('LOGIN_REQUIRED');
-    }
-
-    const response = await jsonp({
-      ...params,
-      token: token
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        response.error || '서버 요청에 실패했습니다.'
-      );
-    }
-
-    return response.data;
-  }
-
-  function handleApiError(error) {
-    const message =
-      error && error.message
-        ? error.message
-        : String(error);
-
-    if (
-      message === 'LOGIN_REQUIRED' ||
-      message.includes('LOGIN_REQUIRED')
-    ) {
-      localStorage.removeItem(TOKEN_KEY);
-
-      showLogin(
-        '인증기간이 만료되었습니다. 공용 비밀번호를 다시 입력해 주세요.'
-      );
-
-      return;
-    }
-
-    showError(message);
-  }
-
-  function jsonp(params) {
-    return new Promise((resolve, reject) => {
-      const callbackName =
-        'capaCallback' +
-        Date.now() +
-        Math.random().toString(36).slice(2);
-
-      const script = document.createElement('script');
-
-      const timeout = setTimeout(() => {
-        finish(
-          new Error('서버 응답 시간이 초과되었습니다.')
-        );
-      }, 15000);
-
-      function finish(value) {
-        clearTimeout(timeout);
-
-        try {
-          delete window[callbackName];
-        } catch (error) {
-          window[callbackName] = undefined;
+      try {
+        const result = await server('SP로그인', password, state.deviceId);
+        if (!result || !result.ok) {
+          el.loginError.textContent = result?.message || '로그인하지 못했습니다.';
+          return;
         }
+        state.token = result.token;
+        localStorage.setItem(KEYS.token, state.token);
+        el.password.value = '';
+        await loadInitial();
+      } catch (error) {
+        el.loginError.textContent = friendlyError(error);
+      } finally {
+        el.loginButton.disabled = false;
+        el.loginButton.textContent = '접속하기';
+      }
+    }
 
-        script.remove();
-
-        if (value instanceof Error) {
-          reject(value);
+    async function loadInitial() {
+      try {
+        const data = await server('SP초기화데이터', state.token, state.deviceId);
+        state.processes = data.processes || state.processes;
+        state.counts = data.counts || {};
+        state.recent = data.recent || [];
+        state.session = data.activeSession || null;
+        if (state.session) {
+          state.worker = state.session.worker;
+          state.process = state.session.process;
+          state.additionalWorkers = Number(state.session.additionalWorkers) || 0;
+          localStorage.setItem(KEYS.worker, state.worker);
+          localStorage.setItem(KEYS.process, state.process);
+          localStorage.setItem(KEYS.additionalWorkers, state.additionalWorkers);
+        }
+        renderWorkers(data.workers || []);
+        renderAdditionalWorkers();
+        renderProcesses();
+        renderSession();
+        renderRecent();
+        showApp();
+        processQueue();
+      } catch (error) {
+        if (isAuthError(error)) {
+          clearToken();
+          showLogin();
         } else {
-          resolve(value);
+          showLogin();
+          el.loginError.textContent = friendlyError(error);
+        }
+      }
+    }
+
+    function showLogin() {
+      el.loginView.hidden = false;
+      el.appView.hidden = true;
+    }
+
+    function showApp() {
+      el.loginView.hidden = true;
+      el.appView.hidden = false;
+    }
+
+    function logout() {
+      stopScanner();
+      clearToken();
+      showLogin();
+    }
+
+    function clearToken() {
+      state.token = '';
+      localStorage.removeItem(KEYS.token);
+    }
+
+    function renderWorkers(workers) {
+      el.workerSelect.innerHTML = '';
+      if (!workers.length) {
+        const option = new Option('작업자마스터를 등록하세요', '');
+        el.workerSelect.add(option);
+        state.worker = '';
+        return;
+      }
+
+      workers.forEach(worker => el.workerSelect.add(new Option(worker, worker)));
+      if (!workers.includes(state.worker)) state.worker = workers[0];
+      el.workerSelect.value = state.worker;
+      localStorage.setItem(KEYS.worker, state.worker);
+    }
+
+    function renderAdditionalWorkers() {
+      el.additionalWorkers.innerHTML = '';
+      for (let count = 0; count <= 20; count += 1) {
+        const label = count === 0 ? '없음 (총 1명)' : '+' + count + '명 (총 ' + (count + 1) + '명)';
+        el.additionalWorkers.add(new Option(label, String(count)));
+      }
+      state.additionalWorkers = Math.min(20, Math.max(0, Number(state.additionalWorkers) || 0));
+      el.additionalWorkers.value = String(state.additionalWorkers);
+    }
+
+    function renderProcesses() {
+      el.processTabs.innerHTML = '';
+      state.processes.forEach(process => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'process-tab' + (process === state.process ? ' active' : '');
+        button.disabled = Boolean(state.session && state.session.status === '진행중');
+        button.innerHTML =
+          '<span>' + escapeHtml(process) + '</span>' +
+          '<small>' + Number(state.counts[process] || 0) + '/' + Number(state.counts.total || 0) + '</small>';
+        button.addEventListener('click', () => {
+          unlockAudio();
+          state.process = process;
+          localStorage.setItem(KEYS.process, process);
+          renderProcesses();
+          el.processMode.textContent = process + ' 모드';
+        });
+        el.processTabs.appendChild(button);
+      });
+      el.processMode.textContent = state.process + ' 모드';
+    }
+
+    function renderSession() {
+      const active = Boolean(state.session && state.session.status === '진행중');
+      const completed = Boolean(state.session && state.session.status === '완료');
+      const totalWorkers = active || completed
+        ? Number(state.session.totalWorkers) || 1
+        : (Number(state.additionalWorkers) || 0) + 1;
+
+      el.workerSelect.disabled = active;
+      el.additionalWorkers.disabled = active;
+      el.startWork.disabled = active;
+      el.endWork.disabled = !active;
+      el.startScanner.disabled = !active;
+      el.manualCode.disabled = !active;
+      el.manualForm.querySelector('button').disabled = !active;
+      el.sessionStatus.classList.toggle('active', active);
+      el.sessionStatus.textContent = active ? '작업 중' : completed ? '완료' : '대기';
+      el.sessionTitle.textContent = active
+        ? state.session.process + ' · ' + state.session.worker
+        : completed
+          ? state.session.process + ' 작업 완료'
+          : '작업 시작 전';
+      el.totalWorkers.textContent = totalWorkers + '명';
+      el.sessionScanCount.textContent =
+        (active || completed ? Number(state.session.scanCount) || 0 : 0) + '건';
+
+      if (state.sessionTimer) {
+        clearInterval(state.sessionTimer);
+        state.sessionTimer = null;
+      }
+      updateSessionClock();
+      if (active) state.sessionTimer = setInterval(updateSessionClock, 1000);
+      renderProcesses();
+    }
+
+    function updateSessionClock() {
+      const active = Boolean(state.session && state.session.status === '진행중');
+      const completed = Boolean(state.session && state.session.status === '완료');
+      let seconds = active
+        ? Math.max(0, Math.floor((Date.now() - new Date(state.session.startedAt).getTime()) / 1000))
+        : Number(state.session?.elapsedSeconds) || 0;
+      const totalWorkers = active || completed
+        ? Number(state.session.totalWorkers) || 1
+        : (Number(state.additionalWorkers) || 0) + 1;
+      el.elapsedTime.textContent = formatDuration(seconds);
+      const labor = completed
+        ? Number(state.session.laborHours) || 0
+        : seconds * totalWorkers / 3600;
+      el.laborHours.textContent = labor.toFixed(2) + '시간';
+    }
+
+    async function startWork() {
+      unlockAudio();
+      if (!state.worker) {
+        feedback('error', '작업자를 선택하세요.', '작업을 시작할 수 없습니다.');
+        return;
+      }
+
+      el.startWork.disabled = true;
+      try {
+        const result = await server('SP작업시작', {
+          token: state.token,
+          deviceId: state.deviceId,
+          worker: state.worker,
+          process: state.process,
+          additionalWorkers: state.additionalWorkers
+        });
+        if (!result || !result.ok) {
+          feedback('error', result?.message || '작업을 시작하지 못했습니다.', '');
+          return;
+        }
+        state.session = result.session;
+        renderSession();
+        feedback(
+          'success',
+          state.process + ' 작업을 시작했습니다.',
+          '총 ' + state.session.totalWorkers + '명 · 종료할 때까지 시간이 자동 집계됩니다.'
+        );
+      } catch (error) {
+        feedback('error', '작업을 시작하지 못했습니다.', friendlyError(error));
+      } finally {
+        if (!state.session) el.startWork.disabled = false;
+      }
+    }
+
+    async function endWork() {
+      unlockAudio();
+      if (!state.session) return;
+      if (state.queueBusy || state.queue.length) {
+        feedback(
+          'warning',
+          '스캔 저장이 아직 진행 중입니다.',
+          '전송대기 기록이 모두 저장된 후 작업을 종료하세요.'
+        );
+        return;
+      }
+
+      el.endWork.disabled = true;
+      try {
+        await stopScanner();
+        const result = await server('SP작업종료', {
+          token: state.token,
+          deviceId: state.deviceId,
+          sessionId: state.session.sessionId
+        });
+        if (!result || !result.ok) {
+          feedback('error', result?.message || '작업을 종료하지 못했습니다.', '');
+          return;
+        }
+        state.session = result.session;
+        renderSession();
+        feedback(
+          'success',
+          state.session.process + ' 작업을 종료했습니다.',
+          '총 ' + state.session.totalWorkers + '명 · ' +
+            state.session.durationText + ' · 스캔 ' + state.session.scanCount + '건'
+        );
+      } catch (error) {
+        feedback('error', '작업을 종료하지 못했습니다.', friendlyError(error));
+      } finally {
+        if (state.session?.status === '진행중') el.endWork.disabled = false;
+      }
+    }
+
+    async function startScanner() {
+      unlockAudio();
+      if (!state.worker) {
+        feedback('error', '작업자를 선택하세요.', 'SP_작업자마스터를 확인하세요.');
+        return;
+      }
+      if (state.scannerRunning) return;
+      if (typeof Html5Qrcode === 'undefined') {
+        feedback('error', '스캐너를 불러오지 못했습니다.', '인터넷 연결을 확인한 뒤 새로고침하세요.');
+        return;
+      }
+      if (!state.session || state.session.status !== '진행중') {
+        feedback('warning', '먼저 작업 시작 버튼을 누르세요.', '작업시간과 인원을 먼저 등록해야 합니다.');
+        return;
+      }
+
+      // 카카오톡 내부 브라우저는 실시간 카메라(getUserMedia)를 제한할 수 있으므로
+      // 기존 CAPA와 동일한 후면 카메라 사진 촬영 방식으로 판독합니다.
+      if (isKakaoWebView() || state.photoFallback) {
+        el.photoInput.click();
+        return;
+      }
+
+      el.startScanner.hidden = true;
+      el.cameraStatus.textContent = '카메라 연결 중';
+      state.scanner = new Html5Qrcode('reader', { verbose: false });
+
+      try {
+        const config = {
+          fps: 15,
+          qrbox: (width, height) => ({
+            width: Math.min(Math.floor(width * .84), 520),
+            height: Math.min(Math.floor(height * .42), 150)
+          }),
+          aspectRatio: 1.5,
+          disableFlip: false
+        };
+        await state.scanner.start(
+          { facingMode: 'environment' },
+          config,
+          decodedText => acceptCode(decodedText, false),
+          () => {
+            if (state.lastDecoded && Date.now() - state.lastSeenAt > 500) {
+              state.lastDecoded = '';
+            }
+          }
+        );
+        state.scannerRunning = true;
+        el.liveDot.classList.add('on');
+        el.cameraStatus.textContent = '연속 스캔 중';
+        feedback('idle', '스캔 준비 완료', '제품 바코드를 카메라 중앙에 맞추세요.');
+      } catch (error) {
+        try {
+          if (state.scanner) state.scanner.clear();
+        } catch (clearError) {}
+        state.scanner = null;
+        state.scannerRunning = false;
+        state.photoFallback = true;
+        el.startScanner.hidden = false;
+        el.startScanner.innerHTML =
+          '<span class="camera-icon"></span>사진 촬영 스캔' +
+          '<small>누르면 후면 카메라가 열립니다</small>';
+        el.liveDot.classList.remove('on');
+        el.cameraStatus.textContent = '사진 촬영 모드';
+        feedback(
+          'idle',
+          '사진 촬영 방식으로 전환했습니다.',
+          '카메라 스캔 버튼을 다시 눌러 바코드를 촬영하세요.'
+        );
+      }
+    }
+
+    function isKakaoWebView() {
+      return /KAKAOTALK/i.test(navigator.userAgent || '');
+    }
+
+    async function readBarcodePhoto(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      unlockAudio();
+      el.startScanner.disabled = true;
+      el.cameraStatus.textContent = '사진 판독 중';
+      feedback('idle', '바코드 판독 중', '촬영한 사진을 확인하고 있습니다.');
+
+      try {
+        const scanFile = await optimizePhotoForQr(file);
+        const decodedText = await withTimeout(
+          decodeQrPhoto(scanFile),
+          12000,
+          'QR 판독시간을 초과했습니다. 다시 촬영해주세요.'
+        );
+        el.cameraStatus.textContent = '촬영 준비';
+        state.lastDecoded = '';
+        acceptCode(decodedText, false);
+      } catch (error) {
+        el.cameraStatus.textContent = '다시 촬영 필요';
+        feedback(
+          'error',
+          '바코드를 읽지 못했습니다.',
+          '바코드가 화면에 크게 보이도록 가까이 촬영해주세요.'
+        );
+      } finally {
+        el.photoInput.value = '';
+        el.startScanner.disabled = false;
+      }
+    }
+
+    async function decodeQrPhoto(file) {
+      if ('BarcodeDetector' in window && 'createImageBitmap' in window) {
+        try {
+          const detector = new BarcodeDetector({ formats: ['qr_code'] });
+          const bitmap = await createImageBitmap(file);
+          const results = await detector.detect(bitmap);
+          if (bitmap.close) bitmap.close();
+          if (results && results.length && results[0].rawValue) {
+            return results[0].rawValue;
+          }
+        } catch (error) {
+          // 지원되지 않는 휴대폰에서는 아래 기존 판독기로 자동 전환합니다.
         }
       }
 
-      window[callbackName] = data => finish(data);
+      const photoScanner = new Html5Qrcode('photoReader', { verbose: false });
+      try {
+        return await photoScanner.scanFile(file, false);
+      } finally {
+        try {
+          photoScanner.clear();
+        } catch (clearError) {}
+      }
+    }
 
-      script.onerror = () => {
-        finish(
-          new Error('Google 시트 서버에 연결하지 못했습니다.')
-        );
-      };
+    function optimizePhotoForQr(file) {
+      const maxSide = 1280;
+      return new Promise(resolve => {
+        const image = new Image();
+        const objectUrl = URL.createObjectURL(file);
 
-      const query = new URLSearchParams();
+        image.onload = () => {
+          try {
+            const longest = Math.max(image.naturalWidth, image.naturalHeight);
+            if (!longest || longest <= maxSide) {
+              URL.revokeObjectURL(objectUrl);
+              resolve(file);
+              return;
+            }
 
-      Object.keys(params).forEach(key => {
-        const value = params[key];
+            const scale = maxSide / longest;
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+            canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+            const context = canvas.getContext('2d', { alpha: false });
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(objectUrl);
 
-        if (
-          value !== undefined &&
-          value !== null
-        ) {
-          query.set(key, value);
-        }
+            canvas.toBlob(blob => {
+              if (!blob) {
+                resolve(file);
+                return;
+              }
+              resolve(new File(
+                [blob],
+                'sp-qr-scan.jpg',
+                { type: 'image/jpeg', lastModified: Date.now() }
+              ));
+            }, 'image/jpeg', .84);
+          } catch (error) {
+            URL.revokeObjectURL(objectUrl);
+            resolve(file);
+          }
+        };
+
+        image.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(file);
+        };
+        image.src = objectUrl;
       });
+    }
 
-      query.set('callback', callbackName);
+    async function stopScanner() {
+      if (!state.scanner) return;
+      try {
+        if (state.scannerRunning) await state.scanner.stop();
+        state.scanner.clear();
+      } catch (error) {}
+      state.scanner = null;
+      state.scannerRunning = false;
+      el.liveDot.classList.remove('on');
+      el.cameraStatus.textContent = '카메라 대기';
+      el.startScanner.hidden = false;
+    }
 
-      script.src = API_URL + '?' + query.toString();
-      document.body.appendChild(script);
-    });
-  }
+    function acceptCode(rawCode, manual) {
+      const code = normalizeCode(rawCode);
+      if (!code) return;
+      if (!state.worker) {
+        feedback('error', '작업자를 선택하세요.', '저장되지 않았습니다.');
+        return;
+      }
+      if (!state.session || state.session.status !== '진행중') {
+        feedback('warning', '먼저 작업 시작 버튼을 누르세요.', '저장되지 않았습니다.');
+        return;
+      }
 
-  function normalizeBarcode(value) {
-    return String(value || '')
-      .trim()
-      .replace(/\s+/g, '')
-      .toUpperCase();
-  }
+      if (state.vehicleChangeMode) {
+        lookupVehicleChangeSource(code);
+        return;
+      }
 
-  function showMessage(text, success) {
-    $('message').textContent = text;
-    $('message').className =
-      'card ' + (success ? 'ok' : 'error');
-  }
+      const queuedDuplicate = state.queue.find(item =>
+        compareCode(item.barcode) === compareCode(code) &&
+        item.process === state.process
+      );
+      if (queuedDuplicate) {
+        feedback(
+          'warning',
+          '동일 QR가 현재 저장 중입니다.',
+          code + ' · 잠시 후 처리 결과를 확인하세요.'
+        );
+        return;
+      }
 
-  function showError(error) {
-    const text =
-      error && error.message
-        ? error.message
-        : String(error);
+      const recentDuplicate = findRecentDuplicate(code, state.process);
+      if (recentDuplicate) {
+        const managementNo =
+          recentDuplicate.afterManagementNo ||
+          recentDuplicate.managementNo ||
+          '해당';
+        feedback(
+          'error',
+          managementNo + ' 관리호차는 ' + state.process + ' 공정이 이미 완료되었습니다.',
+          code + ' · 저장되지 않았습니다.'
+        );
+        return;
+      }
 
-    showMessage(text, false);
-  }
+      if (!manual && state.lastDecoded === code) {
+        state.lastSeenAt = Date.now();
+        return;
+      }
+      state.lastDecoded = code;
+      state.lastSeenAt = Date.now();
 
-  function showLoginError(text) {
-    $('loginMessage').textContent = text;
-    $('loginMessage').className = 'card error';
-  }
+      const item = {
+        requestId: createId('REQ'),
+        barcode: code,
+        worker: state.worker,
+        process: state.process,
+        sessionId: state.session.sessionId,
+        deviceId: state.deviceId,
+        createdAt: new Date().toISOString()
+      };
+      state.queue.push(item);
+      saveQueue();
+      updateQueueBadge();
+      feedback('idle', '스캔 인식 · 자동저장 중', code + ' · 계속 다음 제품을 스캔할 수 있습니다.');
+      processQueue();
+    }
 
-  function escapeHtml(value) {
-    return String(value).replace(
-      /[&<>'"]/g,
-      character => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        "'": '&#39;',
-        '"': '&quot;'
-      }[character])
-    );
-  }
-</script>
+    function findRecentDuplicate(barcode, process) {
+      const normalized = compareCode(barcode);
+      return state.recent.find(event =>
+        compareCode(event.barcode) === normalized &&
+        event.process === process &&
+        event.action !== '스캔취소' &&
+        event.status !== '취소'
+      ) || null;
+    }
+
+    async function processQueue() {
+      if (state.queueBusy || !state.queue.length || !state.token) return;
+      state.queueBusy = true;
+      const item = state.queue[0];
+      let nextDelay = 120;
+
+      try {
+        const result = await server('SP스캔저장', {
+          ...item,
+          token: state.token
+        });
+
+        state.queue.shift();
+        saveQueue();
+        updateQueueBadge();
+
+        if (result && result.ok) {
+          if (result.counts) state.counts = result.counts;
+          if (result.session) {
+            state.session = result.session;
+            renderSession();
+          }
+          renderProcesses();
+          const event = result.event;
+          if (event) {
+            state.recent = [
+              event,
+              ...state.recent.filter(row => row.rootEventId !== event.rootEventId)
+            ].slice(0, 20);
+            renderRecent();
+            feedback(
+              'success',
+              event.managementNo + ' 저장 완료',
+              [event.vehicle, event.item, event.partNo, event.process].filter(Boolean).join(' · ')
+            );
+          }
+        } else {
+          handleSaveError(result, item);
+        }
+      } catch (error) {
+        if (isAuthError(error)) {
+          clearToken();
+          showLogin();
+          feedback('error', '로그인이 만료되었습니다.', '다시 로그인하면 전송대기 기록을 이어서 저장합니다.');
+        } else {
+          feedback('warning', '서버 전송 대기', '연결되면 자동으로 다시 저장합니다.');
+          nextDelay = 3000;
+        }
+      } finally {
+        state.queueBusy = false;
+        if (state.queue.length && state.token) setTimeout(processQueue, nextDelay);
+      }
+    }
+
+    function handleSaveError(result, item) {
+      const code = result?.code || 'SAVE_FAILED';
+      const detail = result?.message || item.barcode;
+      const warningCodes = ['NO_AVAILABLE_VEHICLE'];
+      feedback(warningCodes.includes(code) ? 'warning' : 'error', detail, item.barcode + ' · 저장되지 않았습니다.');
+    }
+
+    function saveQueue() {
+      localStorage.setItem(KEYS.queue, JSON.stringify(state.queue));
+    }
+
+    function updateQueueBadge() {
+      const count = state.queue.length;
+      el.queueBadge.hidden = count === 0;
+      el.queueBadge.textContent = '전송대기 ' + count;
+    }
+
+    async function refreshRecent() {
+      try {
+        const result = await server('SP최근이력', state.token, state.deviceId);
+        state.recent = result.recent || [];
+        state.counts = result.counts || {};
+        renderProcesses();
+        renderRecent();
+        toast('최근 작업이력을 새로 불러왔습니다.');
+      } catch (error) {
+        feedback('error', '이력을 불러오지 못했습니다.', friendlyError(error));
+      }
+    }
+
+    function renderRecent() {
+      if (!state.recent.length) {
+        el.eventList.innerHTML = '<div class="empty">아직 스캔된 제품이 없습니다.</div>';
+        updateOwnActions();
+        return;
+      }
+
+      el.eventList.innerHTML = state.recent.slice(0, 12).map(event => {
+        const cancelled = event.action === '스캔취소';
+        const changed = event.action === '호차변경';
+        const className = cancelled ? ' cancelled' : changed ? ' changed' : '';
+        const mark = cancelled ? '—' : changed ? '⇄' : '✓';
+        const note = changed
+          ? escapeHtml((event.beforeManagementNo || '') + ' → ' + (event.afterManagementNo || event.managementNo))
+          : cancelled ? escapeHtml(event.reason || '스캔취소') : '';
+
+        return (
+          '<article class="event' + className + '">' +
+            '<div class="event-mark">' + mark + '</div>' +
+            '<div class="event-main">' +
+              '<strong>' + escapeHtml(event.managementNo) + ' · ' + escapeHtml(event.partNo) + '</strong>' +
+              '<span>' + escapeHtml(event.vehicle) + ' / ' + escapeHtml(event.item) +
+                ' · ' + escapeHtml(event.process) + ' · ' + escapeHtml(event.worker) + '</span>' +
+              (note ? '<small>' + note + '</small>' : '') +
+            '</div>' +
+            '<time>' + formatTime(event.timestamp) + '</time>' +
+          '</article>'
+        );
+      }).join('');
+
+      updateOwnActions();
+    }
+
+    function updateOwnActions() {
+      state.lastOwnEvent = state.recent.find(event =>
+        event.action !== '스캔취소' &&
+        event.deviceId === state.deviceId &&
+        event.worker === state.worker
+      ) || null;
+
+      const enabled = Boolean(state.lastOwnEvent) && !state.queueBusy;
+      el.cancelButton.disabled = !enabled;
+      el.changeButton.disabled = !state.worker || !state.session ||
+        state.session.status !== '진행중' || state.queueBusy;
+    }
+
+    function openCancel() {
+      if (!state.lastOwnEvent) return;
+      el.cancelTarget.textContent =
+        state.lastOwnEvent.managementNo + ' · ' + state.lastOwnEvent.partNo;
+      el.cancelModal.hidden = false;
+    }
+
+    async function cancelLast() {
+      if (!state.lastOwnEvent) return;
+      el.confirmCancel.disabled = true;
+      try {
+        const result = await server('SP스캔취소', {
+          token: state.token,
+          deviceId: state.deviceId,
+          rootEventId: state.lastOwnEvent.rootEventId,
+          worker: state.worker,
+          reason: '잘못 스캔'
+        });
+        if (!result.ok) {
+          feedback('error', result.message, '취소되지 않았습니다.');
+          return;
+        }
+        el.cancelModal.hidden = true;
+        if (result.counts) state.counts = result.counts;
+        await refreshRecent();
+        feedback(
+          'cancel',
+          '스캔을 취소했습니다.',
+          result.event.managementNo + ' · ' + result.event.partNo + ' · 다시 스캔할 수 있습니다.'
+        );
+      } catch (error) {
+        feedback('error', '스캔을 취소하지 못했습니다.', friendlyError(error));
+      } finally {
+        el.confirmCancel.disabled = false;
+      }
+    }
+
+    function openVehicleChange() {
+      if (!state.worker || !state.session || state.session.status !== '진행중') {
+        feedback('warning', '먼저 작업을 시작하세요.', '호차변경은 진행 중인 공정에서 사용할 수 있습니다.');
+        return;
+      }
+      if (state.vehicleChangeMode) {
+        resetVehicleChange();
+        feedback('idle', '호차변경을 취소했습니다.', '이제 일반 스캔으로 저장됩니다.');
+        return;
+      }
+      resetVehicleChange();
+      state.vehicleChangeMode = true;
+      el.vehiclePartNo.textContent = 'QR 스캔 대기';
+      el.currentVehicle.textContent = '-';
+      el.vehicleChangeGuide.textContent = '변경할 현재 제품의 QR을 카메라로 스캔하세요.';
+      el.candidateList.innerHTML = '<div class="empty">QR 스캔 후 새 관리호차를 입력할 수 있습니다.</div>';
+      el.vehicleModal.hidden = true;
+      feedback('idle', '호차변경 QR 스캔 대기', '변경할 제품의 QR을 스캔하세요. 일반 스캔으로 저장되지 않습니다.');
+      startScanner();
+    }
+
+    async function lookupVehicleChangeSource(barcode) {
+      // 실시간 카메라가 같은 QR을 다시 읽어 일반 스캔으로
+      // 저장하지 않도록, 원본 조회 전에 먼저 카메라를 중지한다.
+      await stopScanner();
+      state.vehicleChangeMode = false;
+      el.vehicleChangeGuide.textContent = '현재 관리호차를 확인하고 새 관리호차를 입력하세요.';
+      try {
+        const result = await server(
+          'SP호차변경원본조회',
+          barcode,
+          state.process,
+          state.token,
+          state.deviceId
+        );
+        if (!result || !result.ok) {
+          feedback('error', result?.message || '변경할 QR을 찾지 못했습니다.', '호차변경을 다시 시작하세요.');
+          resetVehicleChange();
+          el.vehicleModal.hidden = true;
+          return;
+        }
+        state.vehicleChangeSource = result.current;
+        el.vehiclePartNo.textContent = result.current.partNo;
+        el.currentVehicle.textContent = result.current.managementNo;
+        el.changeTargetInput.disabled = false;
+        el.confirmVehicleChange.disabled = false;
+        el.changeTargetInput.value = '';
+        el.changeTargetInput.focus();
+        el.candidateList.innerHTML =
+          '<div class="empty">' + escapeHtml(result.current.vehicle) + ' · ' +
+          escapeHtml(result.current.item) + ' · ' + escapeHtml(result.current.process) + '</div>';
+        el.vehicleModal.hidden = false;
+        feedback(
+          'success',
+          result.current.managementNo + ' 확인 완료',
+          '변경할 새 관리호차를 수기로 입력하세요.'
+        );
+      } catch (error) {
+        resetVehicleChange();
+        el.vehicleModal.hidden = true;
+        feedback('error', '변경할 QR을 확인하지 못했습니다.', friendlyError(error));
+      }
+    }
+
+    async function changeVehicle(event) {
+      event.preventDefault();
+      const source = state.vehicleChangeSource;
+      const targetManagementNo = el.changeTargetInput.value.trim();
+      if (!source) {
+        feedback('warning', '변경할 QR을 먼저 스캔하세요.', '현재 관리호차가 확인되지 않았습니다.');
+        return;
+      }
+      if (!targetManagementNo) {
+        feedback('warning', '새 관리호차를 입력하세요.', '관리호차 번호를 정확히 입력하세요.');
+        el.changeTargetInput.focus();
+        return;
+      }
+      el.changeTargetInput.disabled = true;
+      el.confirmVehicleChange.disabled = true;
+      try {
+        const result = await server('SP호차변경', {
+          token: state.token,
+          deviceId: state.deviceId,
+          rootEventId: source.rootEventId,
+          targetManagementNo: targetManagementNo,
+          worker: state.worker,
+          reason: 'QR 확인 후 관리호차 수기변경'
+        });
+        if (!result.ok) {
+          feedback('error', result.message, '호차가 변경되지 않았습니다.');
+          el.changeTargetInput.disabled = false;
+          el.confirmVehicleChange.disabled = false;
+          return;
+        }
+        resetVehicleChange();
+        el.vehicleModal.hidden = true;
+        if (result.counts) state.counts = result.counts;
+        await refreshRecent();
+        feedback(
+          'success',
+          targetManagementNo + ' 변경 완료',
+          result.event.beforeManagementNo + ' → ' + result.event.afterManagementNo + ' · 이력 저장'
+        );
+      } catch (error) {
+        feedback('error', '호차를 변경하지 못했습니다.', friendlyError(error));
+        el.changeTargetInput.disabled = false;
+        el.confirmVehicleChange.disabled = false;
+      } finally {
+        updateOwnActions();
+      }
+    }
+
+    function resetVehicleChange() {
+      state.vehicleChangeMode = false;
+      state.vehicleChangeSource = null;
+      el.changeTargetInput.value = '';
+      el.changeTargetInput.disabled = true;
+      el.confirmVehicleChange.disabled = true;
+      el.vehiclePartNo.textContent = '-';
+      el.currentVehicle.textContent = '-';
+      el.vehicleChangeGuide.textContent = '변경할 제품의 QR을 먼저 스캔하세요.';
+      el.candidateList.innerHTML = '';
+    }
+
+    function feedback(type, title, detail) {
+      clearTimeout(state.feedbackTimer);
+      el.scannerCard.classList.remove('success', 'error', 'warning');
+      if (type === 'success') {
+        el.scannerCard.classList.add('success');
+        el.resultMark.textContent = '✓';
+        signalFeedback('success');
+      } else if (type === 'error') {
+        el.scannerCard.classList.add('error');
+        el.resultMark.textContent = '!';
+        signalFeedback('error');
+      } else if (type === 'warning') {
+        el.scannerCard.classList.add('warning');
+        el.resultMark.textContent = '!';
+        signalFeedback('warning');
+      } else if (type === 'cancel') {
+        el.resultMark.textContent = '—';
+        signalFeedback('cancel');
+      } else {
+        el.resultMark.textContent = '◎';
+      }
+      el.resultTitle.textContent = title;
+      el.resultDetail.textContent = detail || '';
+      state.feedbackTimer = setTimeout(() => {
+        el.scannerCard.classList.remove('success', 'error', 'warning');
+      }, 1500);
+    }
+
+    function unlockAudio() {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return Promise.resolve(false);
+      if (!state.audio) state.audio = new AudioCtx();
+      const resume = state.audio.state === 'suspended'
+        ? state.audio.resume()
+        : Promise.resolve();
+
+      return resume.then(() => {
+        if (state.audio.state !== 'running') return false;
+        if (!state.audioReady) {
+          const buffer = state.audio.createBuffer(1, 1, 22050);
+          const source = state.audio.createBufferSource();
+          source.buffer = buffer;
+          source.connect(state.audio.destination);
+          source.start(0);
+          state.audioReady = true;
+        }
+        return true;
+      }).catch(() => false);
+    }
+
+    function tone(frequency, duration, delay, volume) {
+      if (!state.audio || state.audio.state !== 'running') return;
+      const oscillator = state.audio.createOscillator();
+      const gain = state.audio.createGain();
+      const start = state.audio.currentTime + (delay || 0);
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(frequency, start);
+      gain.gain.setValueAtTime(.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume || .16, start + .015);
+      gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+      oscillator.connect(gain);
+      gain.connect(state.audio.destination);
+      oscillator.start(start);
+      oscillator.stop(start + duration + .02);
+    }
+
+    function soundSuccess() { tone(880,.11,0,.16); tone(1175,.16,.12,.16); }
+    function soundWarning() { tone(520,.12,0,.16); tone(390,.16,.14,.16); }
+    function soundError() { tone(260,.22,0,.18); tone(220,.28,.24,.18); }
+    function soundCancel() { tone(480,.1,0,.13); }
+
+    function signalFeedback(type) {
+      const patterns = {
+        success: [110, 55, 110],
+        warning: [140, 80, 140],
+        error: [260, 100, 260, 100, 260],
+        cancel: 90
+      };
+      vibrate(patterns[type]);
+      unlockAudio().then(ready => {
+        if (!ready) return;
+        if (type === 'success') soundSuccess();
+        else if (type === 'warning') soundWarning();
+        else if (type === 'error') soundError();
+        else if (type === 'cancel') soundCancel();
+      });
+    }
+
+    function vibrate(pattern) {
+      if (!navigator.vibrate) return false;
+      navigator.vibrate(0);
+      return navigator.vibrate(pattern);
+    }
+
+    function toast(message) {
+      el.toast.textContent = message;
+      el.toast.classList.add('show');
+      setTimeout(() => el.toast.classList.remove('show'), 1800);
+    }
+
+    function server(functionName, ...args) {
+      const request = new Promise((resolve, reject) => {
+        const runner = google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject);
+        runner[functionName](...args);
+      });
+      return withTimeout(request, 15000, '서버 응답이 늦어지고 있습니다.');
+    }
+
+    function withTimeout(promise, milliseconds, message) {
+      return Promise.race([
+        promise,
+        new Promise((resolve, reject) => {
+          setTimeout(() => reject(new Error(message)), milliseconds);
+        })
+      ]);
+    }
+
+    function createId(prefix) {
+      const uuid = window.crypto && crypto.randomUUID
+        ? crypto.randomUUID().replace(/-/g, '')
+        : String(Date.now()) + Math.random().toString(16).slice(2);
+      return prefix + '-' + uuid.slice(0, 20).toUpperCase();
+    }
+
+    function normalizeCode(value) {
+      return String(value || '').trim();
+    }
+
+    function compareCode(value) {
+      // 실시간 스캔과 사진 판독이 GS/RS 제어문자를
+      // 다르게 반환해도 같은 DataMatrix로 비교한다.
+      return normalizeCode(value).toUpperCase().replace(/[^0-9A-Z]/g, '');
+    }
+
+    function readJson(key, fallback) {
+      try { return JSON.parse(localStorage.getItem(key)) || fallback; }
+      catch (error) { return fallback; }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatTime(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return new Intl.DateTimeFormat('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).format(date);
+    }
+
+    function formatDuration(value) {
+      const total = Math.max(0, Math.floor(Number(value) || 0));
+      const hours = Math.floor(total / 3600);
+      const minutes = Math.floor((total % 3600) / 60);
+      const seconds = total % 60;
+      return [hours, minutes, seconds]
+        .map(number => String(number).padStart(2, '0'))
+        .join(':');
+    }
+
+    function isAuthError(error) {
+      const message = String(error?.message || error || '');
+      return message.includes('AUTH_');
+    }
+
+    function friendlyError(error) {
+      const message = String(error?.message || error || '알 수 없는 오류');
+      if (message.includes('AUTH_')) return '로그인이 만료되었습니다. 다시 로그인하세요.';
+      return message.replace(/^Exception:\s*/, '');
+    }
+  </script>
 </body>
 </html>
