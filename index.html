@@ -840,7 +840,7 @@
         state.token = result.token;
         localStorage.setItem(KEYS.token, state.token);
         el.password.value = '';
-        await loadInitial();
+        await loadInitial(result.initialData);
       } catch (error) {
         el.loginError.textContent = friendlyError(error);
       } finally {
@@ -849,9 +849,13 @@
       }
     }
 
-    async function loadInitial() {
+    async function loadInitial(loginInitialData) {
       try {
-        const data = await server('SP초기화데이터', state.token, state.deviceId);
+        const data = loginInitialData ||
+          await server('SP초기화데이터', state.token, state.deviceId);
+        if (!data || typeof data !== 'object') {
+          throw new Error('초기 작업데이터를 불러오지 못했습니다. 새로고침 후 다시 로그인하세요.');
+        }
         state.processes = data.processes || state.processes;
         state.counts = data.counts || {};
         state.recent = data.recent || [];
